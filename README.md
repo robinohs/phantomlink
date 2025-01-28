@@ -2,6 +2,8 @@
   <img src="https://raw.githubusercontent.com/robinohs/phantomlink/main/docs/images/phantomlink.png" alt="phantomlink Logo" width="600px">
 </p>
 
+<p align="center"><code>phantomlink</code> looks like a multi-hop Internet path but emulates a virtual end-to-end link</p>
+
 <p align="center">
     <a href="https://www.rustup.rs"><img alt="Minimum Stable Rust Version 1.7.4" src="https://img.shields.io/badge/Rust-1.74.1%2B-orange.svg"></a>
     <a href="https://depend.cs.uni-saarland.de/"><img alt="Dependable Systems and Software" src="https://img.shields.io/badge/Dependable%20Systems%20and%20Software-8A2BE2"></a>
@@ -21,7 +23,7 @@ Any contributions are very welcome!
 
 ## 🏛 License
 
-phantomlink is licensed under [MIT](https://github.com/robinohs/phantomlink/blob/main/LICENSE).
+`phantomlink` is licensed under [MIT](https://github.com/robinohs/phantomlink/blob/main/LICENSE).
 
 ## 🙏 Acknowledgement
 
