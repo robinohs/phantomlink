@@ -1,4 +1,55 @@
 {
-  "projectName": "phantomlink",
-  "projectOwner": "robinohs"
+    "projectName": "phantomlink",
+    "projectOwner": "robinohs",
+    "repoType": "github",
+    "repoHost": "https://github.com",
+    "files": [
+        "README.md"
+    ],
+    "imageSize": 100,
+    "commit": false,
+    "commitConvention": "none",
+    "contributors": [
+        {
+            "login": "robinohs",
+            "name": "Robin Ohs",
+            "avatar_url": "https://avatars.githubusercontent.com/u/49798174?v=4",
+            "profile": "http://robinohs.dev/",
+            "contributions": [
+                "code",
+                "doc",
+                "ideas",
+                "maintenance",
+                "research"
+            ]
+        },
+        {
+            "login": "GrSto",
+            "name": "Gregory",
+            "avatar_url": "https://avatars.githubusercontent.com/u/10924479?v=4",
+            "profile": "https://github.com/GrSto",
+            "contributions": [
+                "code",
+                "doc",
+                "ideas",
+                "research"
+            ]
+        },
+        {
+            "login": "netzdoktor",
+            "name": "Andreas Schmidt",
+            "avatar_url": "https://avatars.githubusercontent.com/u/974093?v=4",
+            "profile": "http://netzdoktor.eu/",
+            "contributions": [
+                "code",
+                "design",
+                "doc",
+                "ideas",
+                "research",
+                "mentoring"
+            ]
+        }
+    ],
+    "contributorsPerLine": 7,
+    "linkToUsage": false
 }

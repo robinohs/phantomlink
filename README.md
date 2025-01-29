@@ -169,13 +169,24 @@ Unless you explicitly state otherwise, any contribution intentionally submitted 
     +-------> Type: feat, fix, docs, style, refactor, test, chore, build
     ```
 
-### Contributors
+### Contributors ✨
 
 <!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
 <!-- prettier-ignore-start -->
 <!-- markdownlint-disable -->
+<table>
+  <tbody>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="http://robinohs.dev/"><img src="https://avatars.githubusercontent.com/u/49798174?v=4?s=100" width="100px;" alt="Robin Ohs"/><br /><sub><b>Robin Ohs</b></sub></a><br /><a href="https://github.com/robinohs/phantomlink/commits?author=robinohs" title="Code">💻</a> <a href="https://github.com/robinohs/phantomlink/commits?author=robinohs" title="Documentation">📖</a> <a href="#ideas-robinohs" title="Ideas, Planning, & Feedback">🤔</a> <a href="#maintenance-robinohs" title="Maintenance">🚧</a> <a href="#research-robinohs" title="Research">🔬</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/GrSto"><img src="https://avatars.githubusercontent.com/u/10924479?v=4?s=100" width="100px;" alt="Gregory"/><br /><sub><b>Gregory</b></sub></a><br /><a href="https://github.com/robinohs/phantomlink/commits?author=GrSto" title="Code">💻</a> <a href="https://github.com/robinohs/phantomlink/commits?author=GrSto" title="Documentation">📖</a> <a href="#ideas-GrSto" title="Ideas, Planning, & Feedback">🤔</a> <a href="#research-GrSto" title="Research">🔬</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="http://netzdoktor.eu/"><img src="https://avatars.githubusercontent.com/u/974093?v=4?s=100" width="100px;" alt="Andreas Schmidt"/><br /><sub><b>Andreas Schmidt</b></sub></a><br /><a href="https://github.com/robinohs/phantomlink/commits?author=netzdoktor" title="Code">💻</a> <a href="#design-netzdoktor" title="Design">🎨</a> <a href="https://github.com/robinohs/phantomlink/commits?author=netzdoktor" title="Documentation">📖</a> <a href="#ideas-netzdoktor" title="Ideas, Planning, & Feedback">🤔</a> <a href="#research-netzdoktor" title="Research">🔬</a> <a href="#mentoring-netzdoktor" title="Mentoring">🧑‍🏫</a></td>
+    </tr>
+  </tbody>
+</table>
 
 <!-- markdownlint-restore -->
 <!-- prettier-ignore-end -->
 
 <!-- ALL-CONTRIBUTORS-LIST:END -->
+
+This project follows the [all-contributors](https://github.com/all-contributors/all-contributors) specification. Contributions of any kind welcome!
