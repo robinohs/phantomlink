@@ -2,7 +2,7 @@
   <img src="./docs/images/phantomlink.png" alt="phantomlink Logo" width="500px">
 </p>
 
-<p align="center">```phantomlink``` looks like a multi-hop Internet path but emulates a virtual end-to-end link</p>
+<p align="center"><code>phantomlink</code> looks like a multi-hop Internet path but emulates a virtual end-to-end link</p>
 
 <p align="center">
     <a href="https://www.rustup.rs"><img alt="Minimum Stable Rust Version 1.7.4" src="https://img.shields.io/badge/Rust-1.74.1%2B-orange.svg"></a>
