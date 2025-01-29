@@ -130,45 +130,6 @@ We look forward to any kind of contributions!
 
 Unless you explicitly state otherwise, any contribution intentionally submitted for inclusion in the work by you, shall be MIT licensed as above, without any additional terms or conditions.
 
-### Guidelines
-
-- any code pushed to the repository should be:
-  - formatted:
-    ```sh
-    cargo fmt --all
-    ```
-  - tested and passing:
-    ```sh
-    cargo test
-    ```
-  - not throwing any clippy errors
-    ```sh
-    cargo clippy
-    ```
-- git commit messages should apply to the following rules (inspired by [joshbuchea](https://gist.github.com/joshbuchea/6f47e86d2510bce28f8e7f42ae84c716)):
-  - Format: `<type>(<scope>)!: <subject>`, while `<scope>` is optional and ! is only used if it is a breaking change
-  - the list of types is:
-    - feat: (new feature for the user, not a new feature for build script)
-    - fix: (bug fix for the user, not a fix to a build script)
-    - docs: (changes to the documentation)
-    - style: (formatting, missing semi colons, etc; no production code change)
-    - refactor: (refactoring production code, eg. renaming a variable)
-    - test: (adding missing tests, refactoring tests; no production code change)
-    - chore: (updating grunt tasks etc; no production code change)
-    - build: (update dependencies or building infrastructure that has an influence on production code)
-    - bench: (changes to benchmarking scripts or code; no production code change)
-    - rm: (remove a feature)
-  - commits should not contain several different commit types (e.g., change build scripts and production code at the same time), but should be specific and traceable
-  - Example:
-    ```
-    feat: add hat wobble
-    ^--^  ^------------^
-    |     |
-    |     +-> Summary in present tense.
-    |
-    +-------> Type: feat, fix, docs, style, refactor, test, chore, build
-    ```
-
 ### Contributors ✨
 
 <!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
