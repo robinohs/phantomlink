@@ -126,7 +126,7 @@ pub mod test {
 
     #[test]
     fn test_lock_free() {
-        assert_eq!(AtomicCell::<u64>::is_lock_free(), true);
+        assert!(AtomicCell::<u64>::is_lock_free());
     }
 
     #[test]
