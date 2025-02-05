@@ -143,9 +143,9 @@ pub mod test {
     #[test]
     fn test_instant_eq() {
         let now = Instant::now();
-        assert_eq!(instant_eq(now, now + Duration::from_micros(1)), true);
-        assert_eq!(instant_eq(now, now + Duration::from_millis(1)), false);
-        assert_eq!(instant_eq(now, now + Duration::from_secs(1)), false);
+        assert!(instant_eq(now, now + Duration::from_micros(1)));
+        assert!(!instant_eq(now, now + Duration::from_millis(1)));
+        assert!(!instant_eq(now, now + Duration::from_secs(1)));
     }
 
     #[test]
