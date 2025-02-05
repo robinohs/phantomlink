@@ -44,7 +44,7 @@ impl Drainer {
         self.handle_startup(&mut tx, &mut socket_input);
 
         while let Ok(data) = socket_input.next() {
-            if self.next_ready.load(Ordering::Relaxed) == true {
+            if self.next_ready.load(Ordering::Relaxed) {
                 tx = self.next_sender.take().unwrap();
                 self.next_ready.store(false, Ordering::Relaxed);
             }
