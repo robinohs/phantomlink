@@ -33,6 +33,7 @@ jobs:
     runs-on: ubuntu-latest
     name: 🔒 Audit
     steps:
+      - run: cargo install cargo-audit --locked
       - uses: actions/checkout@v4
       - run: cargo audit
   
