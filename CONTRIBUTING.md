@@ -44,6 +44,7 @@ Git commit messages should apply to the following rules (inspired by [joshbuchea
   - refactor: (refactoring production code, eg. renaming a variable)
   - test: (adding missing tests, refactoring tests; no production code change)
   - chore: (updating grunt tasks etc; no production code change)
+  - CI: (update the pipeline; no production code change)
   - build: (update dependencies or building infrastructure that has an influence on production code)
   - bench: (changes to benchmarking scripts or code; no production code change)
   - rm: (remove a feature)
