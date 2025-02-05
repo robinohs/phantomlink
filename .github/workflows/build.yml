@@ -1,0 +1,52 @@
+name: build
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    name: 🚧 Build
+    steps:
+      - uses: actions/checkout@v4
+      - run: cargo build --release
+      - name: Upload release artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: phantomlink
+          path: target/release/phantomlink
+
+  ensure-cargo-fmt:
+    runs-on: ubuntu-latest
+    name: 🎨 Format
+    steps:
+      - uses: actions/checkout@v4
+      - run: cargo fmt -- --check
+
+  ensure-cargo-audit:
+    runs-on: ubuntu-latest
+    name: 🔒 Audit
+    steps:
+      - uses: actions/checkout@v4
+      - run: cargo audit
+  
+  ensure-cargo-test:
+    runs-on: ubuntu-latest
+    name: 🧪 Test
+    steps:
+      - uses: actions/checkout@v4
+      - run: cargo test
+
+  ensure-cargo-clippy:
+    runs-on: ubuntu-latest
+    name: 📎 Clippy
+    steps:
+      - uses: actions/checkout@v4
+      - run: cargo clippy
+
