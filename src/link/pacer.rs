@@ -1,20 +1,20 @@
 use std::{
     sync::{
-        atomic::{AtomicBool, AtomicU64, Ordering},
+        atomic::{AtomicU64, Ordering},
         Arc, Condvar, Mutex,
     },
     time::{Duration, Instant},
 };
 
 use core_affinity::{set_for_current, CoreId};
-use log::{debug, info};
+use crossbeam::atomic::AtomicCell;
+use log::debug;
 use spin_sleep::SpinSleeper;
 use thread_priority::{set_current_thread_priority, ThreadPriority};
 use uom::si::{
-    f64::Time,
+    f64::{InformationRate, Time},
     information_rate::{byte_per_second, megabit_per_second},
     time::{nanosecond, second},
-    u64::InformationRate,
 };
 
 use crate::{
@@ -29,26 +29,26 @@ struct DataRateCell {
 impl DataRateCell {
     fn new(initial_btldr: InformationRate) -> Self {
         Self {
-            dr: AtomicU64::new(initial_btldr.get::<byte_per_second>()),
+            dr: AtomicU64::new(initial_btldr.get::<byte_per_second>() as u64),
         }
     }
 
     fn load(&self) -> InformationRate {
-        InformationRate::new::<byte_per_second>(self.dr.load(Ordering::Relaxed))
+        InformationRate::new::<byte_per_second>(self.dr.load(Ordering::Relaxed) as f64)
     }
 
     fn store(&self, v: InformationRate) {
-        self.dr.store(v.get::<byte_per_second>(), Ordering::Relaxed);
+        self.dr.store(v.get::<byte_per_second>() as u64, Ordering::Relaxed);
     }
 }
 
 pub struct Pacer {
-    route_id: u64,
+    route_id: AtomicU64,
     buffer: ByteReceiver,
     link: Arc<(Mutex<InflightQueue>, Condvar)>,
     btldr: DataRateCell,
     delay: AtomicU64,
-    stopped: AtomicBool,
+    reconfigure_until: AtomicCell<Option<Instant>>,
 }
 
 impl Pacer {
@@ -60,12 +60,12 @@ impl Pacer {
         initial_delay: Duration,
     ) -> Self {
         Self {
-            route_id,
+            route_id: AtomicU64::new(route_id),
             buffer,
             link,
             btldr: DataRateCell::new(initial_btldr),
             delay: AtomicU64::new(initial_delay.as_millis().try_into().unwrap()),
-            stopped: AtomicBool::new(false),
+            reconfigure_until: AtomicCell::new(None),
         }
     }
 
@@ -79,13 +79,15 @@ impl Pacer {
         let mut last_packet = Instant::now(); // stores time when last packet was sent
         const DURATION: Duration = Duration::from_secs(2);
         loop {
-            if self.stopped.load(Ordering::Relaxed) && self.buffer.is_empty() {
-                break;
-            }
             while let Ok(data) = self.buffer.recv_timeout(DURATION) {
+                if let Some(until) = self.reconfigure_until.take() {
+                    let remaining = until - Instant::now();
+                    spin_sleep.sleep_ns(remaining.as_nanos() as u64);
+                }
+
                 // simulate datarate, taking into account the time code execution takes
                 let length_byte: f64 = data.len() as f64;
-                let btldr_byte_per_s = self.btldr.load().get::<byte_per_second>() as f64;
+                let btldr_byte_per_s = self.btldr.load().get::<byte_per_second>();
                 let transmission_time: Time = Time::new::<second>(length_byte / btldr_byte_per_s);
                 let transmission_time_ns = transmission_time.get::<nanosecond>() as u64;
                 let time_elapsed_since_last = last_packet.elapsed().as_nanos() as u64;
@@ -94,7 +96,10 @@ impl Pacer {
 
                 let (lock, cvar) = &*self.link;
                 let mut pq = lock.lock().unwrap();
-                match pq.try_schedule_packet(data, self.route_id, self.delay.load(Ordering::Relaxed)).0 {
+                match pq
+                    .schedule_packet(data, self.route_id.load(Ordering::Relaxed), self.delay.load(Ordering::Relaxed))
+                    .0
+                {
                     ScheduleResult::Changed => {
                         cvar.notify_all();
                     }
@@ -103,8 +108,12 @@ impl Pacer {
                 last_packet = Instant::now(); // update last sent time
             }
         }
+    }
 
-        info!("Exit pacer");
+    pub fn switch_route(&self, new_route_id: u64, reconfiguration_delay: Duration) {
+        debug!("Update route_id to {}", new_route_id);
+        self.route_id.store(new_route_id, Ordering::Relaxed);
+        self.reconfigure_until.store(Some(Instant::now() + reconfiguration_delay));
     }
 
     pub fn update_datarate(&self, new_btldr: InformationRate) {
@@ -116,10 +125,5 @@ impl Pacer {
         let delay_ms: u64 = new_delay.as_millis().try_into().unwrap();
         debug!("Update delay to {}ms", delay_ms);
         self.delay.store(delay_ms, Ordering::Relaxed);
-    }
-
-    pub fn set_stopped(&self) {
-        info!("Stop pacer");
-        self.stopped.store(true, Ordering::Relaxed);
     }
 }

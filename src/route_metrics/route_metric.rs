@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use serde::Deserialize;
-use uom::si::{information_rate::byte_per_second, u64::InformationRate};
+use uom::si::{f64::InformationRate, information_rate::byte_per_second};
 
 #[derive(Debug, Deserialize)]
 pub struct RouteMetricRaw {
@@ -25,8 +25,8 @@ pub struct RouteMetric {
 
 impl From<RouteMetricRaw> for RouteMetric {
     fn from(value: RouteMetricRaw) -> Self {
-        let delay_ns = (value.delay * 1000.0 * 1000.0) as u64; // first convert ms to ns, then round to u64
-        let btldr_byte_s = (value.btldr * (1000.0 * 1000.0 / 8.0)) as u64; // first convert Mbit/s to B/s, then round to u64
+        let delay_ns = (value.delay * 1000.0 * 1000.0) as u64; // first convert ms to ns then to u64
+        let btldr_byte_s = value.btldr * (1000.0 * 1000.0 / 8.0); // first convert Mbit/s to B/s
         Self {
             time_after_start: Duration::from_millis(value.time),
             route_id: value.route_id,
@@ -55,6 +55,6 @@ mod tests {
         assert_eq!(route_metric.time_after_start, Duration::from_millis(0));
         assert_eq!(route_metric.route_id, 0);
         assert_eq!(route_metric.delay, Duration::from_millis(140));
-        assert_eq!(route_metric.btldr, InformationRate::new::<megabit_per_second>(100));
+        assert_eq!(route_metric.btldr, InformationRate::new::<megabit_per_second>(100.0));
     }
 }

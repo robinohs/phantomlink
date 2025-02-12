@@ -13,9 +13,8 @@ use thread_priority::{set_current_thread_priority, ThreadPriority};
 use uom::si::{
     f64::{Information, InformationRate, Time},
     information::{bit, kilobyte},
-    information_rate::{byte_per_second, megabit_per_second},
+    information_rate::megabit_per_second,
     time::microsecond,
-    u64::{Information as InformationU64, InformationRate as InformationRateU64},
 };
 
 use crate::{
@@ -49,10 +48,11 @@ impl Dispatcher {
         socket_input: Box<dyn DataLinkReceiver>,
         mut route_metric_queue: RouteMetricQueue,
         inflight_queue: Arc<(Mutex<InflightQueue>, Condvar)>,
+        reconfiguration_delay: Duration,
     ) -> Result<()> {
         let core_id_mngr = self.core_pool.as_mut().and_then(|cp| cp.pop());
         let core_id_drain = self.core_pool.as_mut().and_then(|cp| cp.pop());
-        let mut core_id_trans = self.core_pool.as_mut().and_then(|cp| cp.pop());
+        let core_id_trans = self.core_pool.as_mut().and_then(|cp| cp.pop());
 
         if let Some(core_id_mngr) = core_id_mngr {
             info!("Link {}: start dispatcher (Core: {}).", self.id, core_id_mngr.id);
@@ -64,13 +64,15 @@ impl Dispatcher {
 
         let spin_sleep = SpinSleeper::default();
         let rdp = route_metric_queue.pop_next_route_metric().ok_or_eyre("Could not get initial RDP")?;
-        let btldr: InformationRateU64 = rdp.btldr;
+        let btldr: InformationRate = rdp.btldr;
         let delay = rdp.delay;
         let mut route_id = rdp.route_id;
 
+        // create ByteBoundedChannel
         let channel_size: Information = self.calculate_bottleneck_buffer_size(btldr, delay);
-        let (sender, receiver) = byte_bounded_channel(InformationU64::new::<bit>(channel_size.get::<bit>() as u64));
+        let (sender, receiver, channel_handle) = byte_bounded_channel(Information::new::<bit>(channel_size.get::<bit>()));
 
+        // create drainer
         let drainer = Drainer::new(self.id, self.startup_mode, sender);
         let drainer = Arc::new(drainer);
         let ld_1 = drainer.clone();
@@ -78,9 +80,10 @@ impl Dispatcher {
             ld_1.run(socket_input, core_id_drain);
         });
 
-        let mut active_pacer = Arc::new(Pacer::create(route_id, receiver, inflight_queue.clone(), btldr, delay));
-        let at0 = active_pacer.clone();
-        let mut t_h = thread::spawn(move || {
+        // create pacer
+        let pacer = Arc::new(Pacer::create(route_id, receiver, inflight_queue.clone(), btldr, delay));
+        let at0 = pacer.clone();
+        let t_h = thread::spawn(move || {
             at0.run(core_id_trans);
         });
 
@@ -103,64 +106,50 @@ impl Dispatcher {
             // if we still need to wait for next event
             if next_route_metric.time_after_start > time_since_start {
                 let wait_time = next_route_metric.time_after_start - time_since_start;
-                debug!("We need to wait {} for next RDP.", wait_time.as_millis());
+                debug!("Wait {}ms for next route metric.", wait_time.as_millis());
                 spin_sleep.sleep_ns(wait_time.as_nanos().try_into().unwrap());
             } else {
-                let rdp = route_metric_queue.pop_next_route_metric().ok_or_eyre("Could not get next RDP")?;
-                let btldr: InformationRateU64 = rdp.btldr;
-                let delay = rdp.delay;
+                let route_metric = route_metric_queue.pop_next_route_metric().ok_or_eyre("Could not get next RDP")?;
+                let btldr: InformationRate = route_metric.btldr;
+                let delay = route_metric.delay;
                 debug!(
                     "{}ms since start: running metric {}-{}",
                     time_since_start.as_millis(),
-                    btldr.get::<megabit_per_second>(),
+                    btldr.get::<megabit_per_second>().round(),
                     delay.as_millis()
                 );
-                let new_route_id = rdp.route_id;
+                debug!(
+                    "Update route, set delay={} ms and btldr={} Mbps",
+                    delay.as_millis(),
+                    btldr.get::<megabit_per_second>().round()
+                );
+                pacer.update_datarate(btldr);
+                pacer.update_delay(delay);
+
+                let new_route_id = route_metric.route_id;
                 if route_id != new_route_id {
-                    debug!("Switch route {}->{}, set delay to {}ms", route_id, new_route_id, delay.as_millis());
-                    let channel_size: Information = self.calculate_bottleneck_buffer_size(btldr, delay);
-                    let (sender, receiver) = byte_bounded_channel(InformationU64::new::<bit>(channel_size.get::<bit>() as u64));
-                    drainer.set_tx(sender);
-                    active_pacer.set_stopped();
-                    // TODO: return core id after Pacer finished via JoinHandle?
-                    if let Some(old_core_id_trans) = core_id_trans {
-                        if let Some(cp) = self.core_pool.as_mut() {
-                            cp.push(old_core_id_trans); // return old core id
-                            core_id_trans = cp.pop();
-                        }
-                    }
-                    active_pacer = Arc::new(Pacer::create(new_route_id, receiver, inflight_queue.clone(), btldr, delay));
-                    let at0 = active_pacer.clone();
-                    t_h = thread::spawn(move || {
-                        at0.run(core_id_trans);
-                    });
+                    debug!("Switch route {}->{}", route_id, new_route_id);
                     route_id = new_route_id;
-                } else {
-                    debug!(
-                        "Update route, set delay={} ms and btldr={} Mbps",
-                        delay.as_millis(),
-                        btldr.get::<megabit_per_second>()
-                    );
-                    active_pacer.update_datarate(btldr);
-                    active_pacer.update_delay(delay);
+                    pacer.switch_route(new_route_id, reconfiguration_delay);
+                    let new_channel_size: Information = self.calculate_bottleneck_buffer_size(btldr, delay);
+                    channel_handle.update_capacity(new_channel_size);
                 }
             }
         }
-
         ld.join().unwrap();
         t_h.join().unwrap();
 
         Ok(())
     }
 
-    fn calculate_bottleneck_buffer_size(&self, datarate: InformationRateU64, delay: Duration) -> Information {
+    fn calculate_bottleneck_buffer_size(&self, datarate: InformationRate, delay: Duration) -> Information {
         let bdp: Information = Self::calculate_bdp(datarate, delay);
         let buffer_size: Information = bdp * self.buffer_size_multiplier;
         debug!(
-            "Link {}: Set BDP={}(kB), BtlBufferSize={}(kB)",
+            "Link {}: Set BDP={} kB, BtlBufferSize={} kB",
             self.id,
-            bdp.get::<kilobyte>(),
-            buffer_size.get::<kilobyte>()
+            bdp.get::<kilobyte>().round(),
+            buffer_size.get::<kilobyte>().round()
         );
         buffer_size
     }
@@ -169,9 +158,8 @@ impl Dispatcher {
         Instant::now() - Runtime::access_app_start_time()
     }
 
-    pub fn calculate_bdp(datarate: InformationRateU64, delay: Duration) -> Information {
+    pub fn calculate_bdp(datarate: InformationRate, delay: Duration) -> Information {
         let rtt: Time = Time::new::<microsecond>(delay.as_micros() as f64 * 2.0);
-        let datarate: InformationRate = InformationRate::new::<byte_per_second>(datarate.get::<byte_per_second>() as f64);
         (datarate * rtt).into()
     }
 }

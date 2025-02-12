@@ -36,9 +36,7 @@ impl InflightQueue {
     }
 
     /// Adds a packet to the packet queue by creating an packet that stores the packet content and the Instant after that the packet is ready to leave the queue.
-    pub fn try_schedule_packet(&mut self, packet: Vec<u8>, route_id: u64, delay: u64) -> (ScheduleResult, u128) {
-        // TODO: check allowed volume on link
-
+    pub fn schedule_packet(&mut self, packet: Vec<u8>, route_id: u64, delay: u64) -> (ScheduleResult, u128) {
         let time = Instant::now();
         let tmp_id = self.next_seq_id;
         self.next_seq_id += 1;
@@ -155,7 +153,7 @@ pub mod test {
         const DELAY: u64 = 50;
         let now = std::time::Instant::now();
         let target = now + Duration::from_millis(DELAY);
-        match evq.try_schedule_packet(BYTES.to_vec(), 0, DELAY).0 {
+        match evq.schedule_packet(BYTES.to_vec(), 0, DELAY).0 {
             ScheduleResult::Changed => {}
             ScheduleResult::Unchanged => panic!("Insert into empty queue should change head."),
         }
@@ -173,7 +171,7 @@ pub mod test {
         let mut evq = default_queue();
 
         const DELAY: u64 = 50;
-        let id_first = match evq.try_schedule_packet(BYTES.to_vec(), 0, DELAY) {
+        let id_first = match evq.schedule_packet(BYTES.to_vec(), 0, DELAY) {
             (ScheduleResult::Changed, id) => id,
             _ => panic!("Insert into empty queue should change head."),
         };
@@ -193,11 +191,11 @@ pub mod test {
         let mut evq = default_queue();
 
         const DELAY: u64 = 50;
-        let id_first = match evq.try_schedule_packet(BYTES.to_vec(), 1, DELAY) {
+        let id_first = match evq.schedule_packet(BYTES.to_vec(), 1, DELAY) {
             (ScheduleResult::Changed, id) => id,
             _ => panic!("Insert into empty queue should change head."),
         };
-        let id_second = match evq.try_schedule_packet(BYTES.to_vec(), 1, DELAY) {
+        let id_second = match evq.schedule_packet(BYTES.to_vec(), 1, DELAY) {
             (ScheduleResult::Unchanged, id) => id,
             _ => panic!("Second packet should arrive later."),
         };
@@ -228,11 +226,11 @@ pub mod test {
         const DELAY: u64 = 50;
         let target = now + Duration::from_millis(DELAY);
 
-        let id_first = match evq.try_schedule_packet(BYTES.to_vec(), 0, DELAY) {
+        let id_first = match evq.schedule_packet(BYTES.to_vec(), 0, DELAY) {
             (ScheduleResult::Changed, id) => id,
             _ => panic!("Insert into empty queue should change minimum."),
         };
-        let id_second = match evq.try_schedule_packet(BYTES.to_vec(), 0, 25) {
+        let id_second = match evq.schedule_packet(BYTES.to_vec(), 0, 25) {
             (ScheduleResult::Unchanged, id) => id,
             _ => panic!("Insert packet on same route should not change minimum."),
         };
@@ -268,11 +266,11 @@ pub mod test {
         let now = Instant::now();
         const DELAY: u64 = 50;
         let target = now + Duration::from_millis(DELAY);
-        let id_first = match evq.try_schedule_packet(BYTES.to_vec(), 0, DELAY) {
+        let id_first = match evq.schedule_packet(BYTES.to_vec(), 0, DELAY) {
             (ScheduleResult::Changed, id) => id,
             _ => panic!("Insert into empty queue should change head."),
         };
-        let id_second = match evq.try_schedule_packet(BYTES.to_vec(), 1, 25) {
+        let id_second = match evq.schedule_packet(BYTES.to_vec(), 1, 25) {
             (ScheduleResult::Changed, id) => id,
             _ => panic!("Faster packet on different route should overtake."),
         };

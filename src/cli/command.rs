@@ -9,6 +9,7 @@ pub const RUN_ARG_INPUT_FILE: &str = "input file";
 pub const RUN_ARG_LEVEL: &str = "level";
 pub const RUN_ARG_BUFFER_SIZE_MULTIPLIER: &str = "buffer-size-multiplier";
 pub const RUN_ARG_STARTUP_MODE: &str = "startup-mode";
+pub const RUN_ARG_RECONFIGURATION_DELAY: &str = "reconfiguration-delay";
 pub const SOCKETSTATS: &str = "socketstats";
 pub const SS_ARG_OUTPUT_FILE: &str = "output file";
 
@@ -41,6 +42,14 @@ pub fn create_cli() -> Command {
                         .required(false)
                         .default_value("1.0")
                         .help("Multiplier for the size of the bottleneck buffer with BDP as the basis (1.0: size is equal to BDP).")
+                        .value_parser(clap::value_parser!(f64)),
+                )
+                .arg(
+                    Arg::new(RUN_ARG_RECONFIGURATION_DELAY)
+                        .long("reconfiguration-delay")
+                        .required(false)
+                        .default_value("0.0")
+                        .help("Milliseconds it takes to reconfigure routes (the Pacer is paused during that time).")
                         .value_parser(clap::value_parser!(f64)),
                 )
                 .arg(

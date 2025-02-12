@@ -81,11 +81,4 @@ impl Drainer {
             }
         }
     }
-
-    pub fn set_tx(&self, sender: ByteSender) {
-        info!("LD: Update channel to send in");
-        // TODO: in principle, multiple set_tx can happen after each other without the sender taken out; especially one can be in taking out while a new one comes in
-        self.next_sender.store(Some(sender));
-        self.next_ready.store(true, Ordering::Relaxed);
-    }
 }

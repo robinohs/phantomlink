@@ -4,7 +4,7 @@ use pnet::datalink::{self, Channel, ChannelType, Config, NetworkInterface};
 use std::{
     path::Path,
     sync::OnceLock,
-    time::{Instant, SystemTime, UNIX_EPOCH},
+    time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
 use uom::si::information::byte;
 
@@ -16,6 +16,7 @@ pub struct Runtime {
     route_metric_queue: RouteMetricQueue,
     startup_mode: StartupMode,
     buffer_size_multiplier: f64,
+    reconfiguration_delay: Duration,
 }
 
 impl Runtime {
@@ -36,12 +37,19 @@ impl Runtime {
     }
 
     /// Creates a new runtime for packet delaying.
-    pub fn new(input_file_path: &Path, startup_mode: StartupMode, buffer_size_multiplier: f64) -> Result<Runtime> {
+    pub fn new(
+        input_file_path: &Path,
+        startup_mode: StartupMode,
+        buffer_size_multiplier: f64,
+        reconfiguration_delay: Duration,
+    ) -> Result<Runtime> {
         info!("Creating new phantomlink instance, reading input from {:?}.", input_file_path);
+
         let rt = Runtime {
             route_metric_queue: RouteMetricQueue::try_load(input_file_path)?,
             startup_mode,
             buffer_size_multiplier,
+            reconfiguration_delay,
         };
         Ok(rt)
     }
@@ -116,6 +124,7 @@ impl Runtime {
             rx_client,
             tx_server,
             self.route_metric_queue.clone(),
+            self.reconfiguration_delay,
             cores_1,
         );
         let lh2 = OnewayVirtualLink::new(
@@ -125,6 +134,7 @@ impl Runtime {
             rx_server,
             tx_client,
             self.route_metric_queue.clone(),
+            self.reconfiguration_delay,
             cores_2,
         );
 
@@ -147,6 +157,7 @@ impl Runtime {
     }
 }
 
+#[track_caller]
 fn set_kernel_param(param: &str) -> Result<()> {
     let output = std::process::Command::new("sudo")
         .arg("ip")

@@ -4,7 +4,8 @@ use std::{sync::Arc, time::Duration};
 use crossbeam::channel::{unbounded, Receiver, Sender};
 use log::debug;
 use thiserror::Error;
-use uom::si::{information::byte, u64::Information};
+use uom::si::information::kilobyte;
+use uom::si::{f64::Information, information::byte};
 
 type Bytes = Vec<u8>;
 
@@ -33,33 +34,43 @@ impl ByteCell {
         Self { len: AtomicU64::new(0) }
     }
 
+    fn new_with_value(capacity: Information) -> Self {
+        let cell = Self::new();
+        cell.set_to(capacity);
+        cell
+    }
+
     fn load(&self) -> Information {
-        Information::new::<byte>(self.len.load(Ordering::Relaxed))
+        Information::new::<byte>(self.len.load(Ordering::Relaxed) as f64)
     }
 
     fn add(&self, v: Information) {
-        self.len.fetch_add(v.get::<byte>(), Ordering::Relaxed);
+        self.len.fetch_add(v.get::<byte>() as u64, Ordering::Relaxed);
     }
 
     fn sub(&self, v: Information) {
-        self.len.fetch_sub(v.get::<byte>(), Ordering::Relaxed);
+        self.len.fetch_sub(v.get::<byte>() as u64, Ordering::Relaxed);
+    }
+
+    fn set_to(&self, v: Information) {
+        self.len.store(v.get::<byte>() as u64, Ordering::Relaxed);
     }
 }
 
 pub struct ByteSender {
     len: Arc<ByteCell>,
-    capacity: Information,
+    capacity: Arc<ByteCell>,
     sender: Sender<Bytes>,
 }
 
 impl ByteSender {
     pub fn try_send(&self, data: Bytes) -> Result<(), TrySendError> {
-        let data_len: Information = Information::new::<byte>(data.len() as u64);
+        let data_len: Information = Information::new::<byte>(data.len() as f64);
 
         let channel_len = self.len.load();
         let new_len = channel_len + data_len;
         // info!("Check {} against {}", new_size.get::<byte>(), self.capacity.get::<byte>());
-        if new_len > self.capacity {
+        if new_len > self.capacity.load() {
             debug!("ByteBoundedChannel: new size exceeds capacity. Packet is not accepted.");
             return Err(TrySendError::ChannelFullError);
         }
@@ -90,31 +101,46 @@ impl ByteReceiver {
                 crossbeam::channel::RecvTimeoutError::Disconnected => Err(RecvTimeoutError::ChannelDisconnected),
             },
         }?;
-        let data_size: Information = Information::new::<byte>(data.len() as u64);
+        let data_size: Information = Information::new::<byte>(data.len() as f64);
         self.len.sub(data_size);
         Ok(data)
     }
 
-    pub fn is_empty(&self) -> bool {
-        self.receiver.is_empty()
+    // pub fn is_empty(&self) -> bool {
+    //     self.receiver.is_empty()
+    // }
+}
+
+pub struct ChannelHandle {
+    capacity: Arc<ByteCell>,
+}
+
+impl ChannelHandle {
+    pub fn update_capacity(&self, capacity: Information) {
+        debug!("Update ByteBoundedChannel capacity to {} kB", capacity.get::<kilobyte>().round());
+        self.capacity.set_to(capacity);
     }
 }
 
 /// Creates a channel that is bounded to hold only a specific number of bytes calculated from the sum of an arbitrary number of messages.
 /// Uses an unbounded cross_beam channel underneath.
-pub fn byte_bounded_channel(capacity: Information) -> (ByteSender, ByteReceiver) {
+pub fn byte_bounded_channel(capacity: Information) -> (ByteSender, ByteReceiver, ChannelHandle) {
     let (sender, receiver) = unbounded::<Bytes>();
     let len = Arc::new(ByteCell::new());
+    let capacity = Arc::new(ByteCell::new_with_value(capacity));
     let sender = ByteSender {
         sender,
         len: len.clone(),
-        capacity,
+        capacity: capacity.clone(),
     };
     let receiver = ByteReceiver {
         receiver,
         len: len.clone(),
     };
-    (sender, receiver)
+    let channel_handle = ChannelHandle {
+        capacity: capacity.clone(),
+    };
+    (sender, receiver, channel_handle)
 }
 
 #[cfg(test)]
@@ -132,7 +158,7 @@ pub mod test {
     #[test]
     /// tests if max_capacity can be used
     fn test_capacity_enough_space() {
-        let (sender, _receiver) = byte_bounded_channel(Information::new::<kilobyte>(1));
+        let (sender, _receiver, _) = byte_bounded_channel(Information::new::<kilobyte>(1.0));
         let data = vec![0; 1000];
         sender.try_send(data).unwrap();
     }
@@ -140,7 +166,7 @@ pub mod test {
     #[test]
     /// tests if multiple packets can be send if there size is below max_capacity
     fn test_capacity_enough_space_two_packets() {
-        let (sender, _receiver) = byte_bounded_channel(Information::new::<kilobyte>(1));
+        let (sender, _receiver, _) = byte_bounded_channel(Information::new::<kilobyte>(1.0));
         let data = vec![0; 500];
         sender.try_send(data).unwrap();
         let data = vec![0; 500];
@@ -150,7 +176,7 @@ pub mod test {
     #[test]
     /// tests if packets are not accepted if they exceed max_capacity
     fn test_capacity_exceeding() {
-        let (sender, _receiver) = byte_bounded_channel(Information::new::<kilobyte>(1));
+        let (sender, _receiver, _) = byte_bounded_channel(Information::new::<kilobyte>(1.0));
         let data = vec![0; 1001];
         let err = sender.try_send(data).unwrap_err();
         assert_eq!(err, TrySendError::ChannelFullError);
@@ -159,7 +185,7 @@ pub mod test {
     #[test]
     /// tests if a packet is not accepted if it and a accepted sent packets exceed max_capacity
     fn test_capacity_exceeding_two_packets() {
-        let (sender, _receiver) = byte_bounded_channel(Information::new::<kilobyte>(1));
+        let (sender, _receiver, _) = byte_bounded_channel(Information::new::<kilobyte>(1.0));
         let data = vec![0; 500];
         sender.try_send(data).unwrap();
         let data = vec![0; 501];
@@ -170,7 +196,7 @@ pub mod test {
     #[test]
     /// tests if capacity is equal to max_capacity, no new packets are accepted
     fn test_capacity_full() {
-        let (sender, _receiver) = byte_bounded_channel(Information::new::<kilobyte>(1));
+        let (sender, _receiver, _) = byte_bounded_channel(Information::new::<kilobyte>(1.0));
         let data = vec![0; 1000];
         sender.try_send(data).unwrap();
         let data = vec![0; 501];
@@ -181,7 +207,7 @@ pub mod test {
     #[test]
     /// tests if removing a packet works
     fn test_remove() {
-        let (sender, receiver) = byte_bounded_channel(Information::new::<kilobyte>(1));
+        let (sender, receiver, _) = byte_bounded_channel(Information::new::<kilobyte>(1.0));
         let data_send = vec![50, 20, 70, 20, 22];
         sender.try_send(data_send.clone()).unwrap();
         let data_received = receiver.recv_timeout(Duration::from_secs(1)).unwrap();
@@ -191,7 +217,7 @@ pub mod test {
     #[test]
     /// tests if remove does timeout if there was no packet sent before
     fn test_remove_no_packet() {
-        let (_sender, receiver) = byte_bounded_channel(Information::new::<kilobyte>(1));
+        let (_sender, receiver, _) = byte_bounded_channel(Information::new::<kilobyte>(1.0));
         let err = receiver.recv_timeout(Duration::from_millis(50)).unwrap_err();
         assert_eq!(err, RecvTimeoutError::Timeout);
     }
@@ -199,7 +225,7 @@ pub mod test {
     #[test]
     /// tests if when multiple packets were sent, it is possible to receive all of them
     fn test_remove_two_packets() {
-        let (sender, receiver) = byte_bounded_channel(Information::new::<kilobyte>(1));
+        let (sender, receiver, _) = byte_bounded_channel(Information::new::<kilobyte>(1.0));
         let data_send_1 = vec![50, 20, 70, 20, 22];
         let data_send_2 = vec![30, 20, 30, 20, 22];
         sender.try_send(data_send_1.clone()).unwrap();
@@ -213,7 +239,7 @@ pub mod test {
     #[test]
     /// Checks if after channel was full and a packet was dropped, it is still possible to recv the first packet.
     fn test_channel_full_does_not_interfere_with_recv() {
-        let (sender, receiver) = byte_bounded_channel(Information::new::<byte>(5));
+        let (sender, receiver, _) = byte_bounded_channel(Information::new::<byte>(5.0));
         let data_send_1 = vec![50, 20, 70, 20, 22];
         sender.try_send(data_send_1.clone()).unwrap();
         let data_send_2 = vec![30, 20, 30, 20, 22];
@@ -226,7 +252,7 @@ pub mod test {
     #[test]
     /// Checks if channel capacity is decreased again after recv.
     fn test_channel_capacity_is_decreased_after_recv() {
-        let (sender, receiver) = byte_bounded_channel(Information::new::<byte>(5));
+        let (sender, receiver, _) = byte_bounded_channel(Information::new::<byte>(5.0));
         // fill channel to max_capacity
         let data_send_1 = vec![50, 20, 70, 20, 22];
         sender.try_send(data_send_1.clone()).unwrap();
@@ -242,20 +268,20 @@ pub mod test {
         assert_eq!(data_send_1, data_received_1);
     }
 
-    #[test]
-    /// tests if returns empty when channel is empty
-    fn test_is_empty_when_empty() {
-        let (_sender, receiver) = byte_bounded_channel(Information::new::<byte>(5));
-        assert!(receiver.is_empty());
-    }
+    // #[test]
+    // /// tests if returns empty when channel is empty
+    // fn test_is_empty_when_empty() {
+    //     let (_sender, receiver, _) = byte_bounded_channel(Information::new::<byte>(5.0));
+    //     assert!(receiver.is_empty());
+    // }
 
-    #[test]
-    /// tests if returns not empty when channel is not empty
-    fn test_is_empty_not_empty() {
-        let (sender, receiver) = byte_bounded_channel(Information::new::<byte>(5));
-        // fill channel
-        let data_send_1 = vec![50, 20, 70, 20, 22];
-        sender.try_send(data_send_1.clone()).unwrap();
-        assert!(!receiver.is_empty());
-    }
+    // #[test]
+    // /// tests if returns not empty when channel is not empty
+    // fn test_is_empty_not_empty() {
+    //     let (sender, receiver, _) = byte_bounded_channel(Information::new::<byte>(5.0));
+    //     // fill channel
+    //     let data_send_1 = vec![50, 20, 70, 20, 22];
+    //     sender.try_send(data_send_1.clone()).unwrap();
+    //     assert!(!receiver.is_empty());
+    // }
 }

@@ -1,6 +1,7 @@
 use std::{
     sync::{Arc, Condvar, Mutex},
     thread::{self, JoinHandle},
+    time::Duration,
 };
 
 use core_affinity::CoreId;
@@ -17,6 +18,7 @@ pub struct OnewayVirtualLink {
 }
 
 impl OnewayVirtualLink {
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         link_id: usize,
         startup_mode: StartupMode,
@@ -24,6 +26,7 @@ impl OnewayVirtualLink {
         input: Box<dyn DataLinkReceiver>,
         output: Box<dyn DataLinkSender>,
         route_metric_queue: RouteMetricQueue,
+        reconfiguration_delay: Duration,
         mut core_pool: Option<Vec<CoreId>>,
     ) -> Self {
         // create packet stacks for this link
@@ -40,7 +43,9 @@ impl OnewayVirtualLink {
         let inflight_queue_listener = inflight_queue.clone();
         let mut dispatcher = Dispatcher::new(link_id, startup_mode, buffer_size_multiplier, core_pool);
         let thread_listener = thread::spawn(move || {
-            dispatcher.run(input, route_metric_queue, inflight_queue_listener).unwrap();
+            dispatcher
+                .run(input, route_metric_queue, inflight_queue_listener, reconfiguration_delay)
+                .unwrap();
         });
 
         // start sender
