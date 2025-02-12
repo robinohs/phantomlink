@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use cli::create_cli;
 use color_eyre::Result;
 use eyre::OptionExt;
@@ -64,8 +66,14 @@ fn main() -> Result<()> {
                 .get_one::<f64>(cli::command::RUN_ARG_BUFFER_SIZE_MULTIPLIER)
                 .ok_or_eyre("Could not get buffer size multiplicator from arguments")?;
 
+            // get reconfiguration delay
+            let reconfiguration_delay = *sub_matches
+                .get_one::<f64>(cli::command::RUN_ARG_RECONFIGURATION_DELAY)
+                .ok_or_eyre("Could not get reconfiguration delay from arguments")?;
+            let reconfiguration_delay = Duration::from_millis(reconfiguration_delay as u64);
+
             // start command
-            let mut rt = Runtime::new(input_file_path, startup_mode, buffer_size_multiplier)?;
+            let mut rt = Runtime::new(input_file_path, startup_mode, buffer_size_multiplier, reconfiguration_delay)?;
             info!("Running virtual link until receiving Ctrl-C...");
             rt.run().unwrap();
         }

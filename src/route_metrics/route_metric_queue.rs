@@ -56,7 +56,7 @@ impl RouteMetricQueue {
         self.route_metrics
             .iter()
             .map(|rm| {
-                let bdp = rm.btldr.get::<byte_per_second>() as f64 * 2.0 * rm.delay.as_secs_f64();
+                let bdp = rm.btldr.get::<byte_per_second>() * 2.0 * rm.delay.as_secs_f64();
                 Information::new::<byte>(bdp as u64)
             })
             .max()
