@@ -1,0 +1,9 @@
+#!/bin/sh
+echo -e "Pre-Commit hook failure. Check logs below."
+set -e
+echo -e "Pre-Commit hook: Running \"cargo fmt\""
+cargo fmt --all --check
+echo -e "Pre-Commit hook: Running \"cargo clippy\""
+cargo clippy --all-features --all-targets --frozen --offline -- --deny warnings
+echo -e "Pre-Commit hook: Running \"cargo test\""
+cargo test --frozen
