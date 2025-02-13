@@ -1,0 +1,55 @@
+stages:
+  - 📦 Build
+  - 🔬 Static Analysis
+  - 🤞🏼 Testing
+
+default:
+  image: rust:1.83
+
+🚧 cargo-build:
+  stage: 📦 Build
+  script:
+    - cargo build
+  artifacts:
+    expire_in: 1 day
+    paths: [target]
+
+🎨 cargo-fmt:
+  stage: 🔬 Static Analysis
+  needs: []
+  before_script:
+    - rustup component add rustfmt
+  script:
+    - cargo fmt --all -- --check
+
+📎 cargo-clippy:
+  stage: 🔬 Static Analysis
+  needs: []
+  before_script:
+    - rustup component add clippy
+  script:
+    - cargo clippy --all-features --all-targets -- --deny warnings
+
+📈 rust-lsif:
+  stage: 🔬 Static Analysis
+  needs: []
+  allow_failure: true # recommended
+  before_script:
+    - rustup component add rust-analyzer
+  script:
+    - rust-analyzer lsif . > dump.lsif
+  artifacts:
+    reports:
+      lsif: dump.lsif
+
+✅ cargo-nextest:
+  stage: 🤞🏼 Testing
+  needs: [🚧 cargo-build]
+  before_script:
+    - curl -LsSf https://get.nexte.st/latest/linux | tar zxf - -C ${CARGO_HOME:-~/.cargo}/bin
+  script:
+    - cargo nextest run --profile ci
+  artifacts:
+    paths: [target/nextest/ci/junit.xml]
+    reports:
+      junit: target/nextest/ci/junit.xml
