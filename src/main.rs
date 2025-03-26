@@ -42,7 +42,10 @@ fn main() -> Result<()> {
     // configure logger
     if let Some((_, sub_matches)) = matches.subcommand() {
         // Configure logger
-        let log_level: stderrlog::LogLevelNum = (*sub_matches.get_one::<cli::LogLevel>(cli::command::RUN_ARG_LEVEL).unwrap()).into();
+        let log_level: stderrlog::LogLevelNum = (*sub_matches
+            .get_one::<cli::LogLevel>(cli::command::RUN_ARG_LEVEL)
+            .unwrap_or(&cli::LogLevel::Info))
+        .into();
         stderrlog::new()
             .module(module_path!())
             .verbosity(log_level)
