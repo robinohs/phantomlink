@@ -1,8 +1,11 @@
 use std::path::PathBuf;
 
-use clap::{crate_version, value_parser, Arg, Command};
+use clap::{value_parser, Arg, Command};
 
-use crate::cli::{LogLevel, StartupMode};
+use crate::{
+    build,
+    cli::{LogLevel, StartupMode},
+};
 
 pub const RUN: &str = "run";
 pub const RUN_ARG_INPUT_FILE: &str = "input file";
@@ -15,7 +18,7 @@ pub const SS_ARG_OUTPUT_FILE: &str = "output file";
 
 pub fn create_cli() -> Command {
     clap::Command::new("phantomlink")
-        .version(crate_version!())
+        .version(build::CLAP_LONG_VERSION)
         .about("phantomlink - Virtual Link")
         .bin_name("phantomlink")
         .subcommand_required(true)

@@ -5,6 +5,9 @@ use color_eyre::Result;
 use eyre::OptionExt;
 use log::info;
 use runtime::Runtime;
+use shadow_rs::shadow;
+
+shadow!(build);
 
 mod cli {
     pub mod command;
