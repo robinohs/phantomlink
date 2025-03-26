@@ -1,11 +1,11 @@
 use std::path::PathBuf;
 
-use clap::{value_parser, Arg, Command};
-
 use crate::{
     build,
     cli::{LogLevel, StartupMode},
+    Shells,
 };
+use clap::{value_parser, Arg, ArgAction, Command};
 
 pub const RUN: &str = "run";
 pub const RUN_ARG_INPUT_FILE: &str = "input file";
@@ -15,6 +15,8 @@ pub const RUN_ARG_STARTUP_MODE: &str = "startup-mode";
 pub const RUN_ARG_RECONFIGURATION_DELAY: &str = "reconfiguration-delay";
 pub const SOCKETSTATS: &str = "socketstats";
 pub const SS_ARG_OUTPUT_FILE: &str = "output file";
+pub const GENERATOR: &str = "generate";
+pub const GEN_ARG_SHELL: &str = "shell";
 
 pub fn create_cli() -> Command {
     clap::Command::new("phantomlink")
@@ -25,7 +27,7 @@ pub fn create_cli() -> Command {
         .arg_required_else_help(true)
         .subcommand(
             Command::new(RUN)
-                .about("Starts the virtual link.")
+                .about("Start the virtual link.")
                 .arg(
                     Arg::new(RUN_ARG_INPUT_FILE)
                         .required(true)
@@ -66,7 +68,7 @@ pub fn create_cli() -> Command {
         )
         .subcommand(
             Command::new(SOCKETSTATS)
-                .about("Starts the socket stats logger.")
+                .about("Start the socket stats logger.")
                 .arg(
                     Arg::new(RUN_ARG_LEVEL)
                         .short('l')
@@ -80,5 +82,14 @@ pub fn create_cli() -> Command {
                         .required(true)
                         .value_parser(clap::value_parser!(PathBuf)),
                 ),
+        )
+        .subcommand(
+            Command::new(GENERATOR).about("Generate shell completions.").arg(
+                Arg::new(GEN_ARG_SHELL)
+                    .required(false)
+                    .help("Specify a shell [Default: Loaded from the environment]")
+                    .action(ArgAction::Set)
+                    .value_parser(value_parser!(Shells)),
+            ),
         )
 }

@@ -22,6 +22,36 @@ With the ability to reorder, delay, pace, and drop packets, ```phantomlink``` ca
 - set the virtual link behavior with a **simple input file format**
 - **support** for **all protocols** using ethernet frames ➡️ just route the traffic to ```phantomlink```
 
+## 🚀 Use ```phantomlink```
+
+> [!WARNING]
+> Phantomlink currently only runs on Linux or the Windows Subsystem for Linux (WSL)
+
+Phantomlink is available for download as a binary here on GitHub.
+At the moment it is still required to setup the namespace environment manually (script).
+We provide a bunch of scripts, which handle the most common operations.
+
+### Installation
+
+To get started you have to do the following:
+
+  1.  Download the ```phantomlink``` binary, make it executable and move it to `/bin` or `/usr/bin`.
+  2.  Create a new folder and download the scripts folder.
+  3.  Create an `.csv` input file using the table format from above.
+  4.  Double check and execute the `setup.sh` script to create the namespaces, the virtual eth devices and configure them.
+  5.  Double check and run the `run.sh` script to execute an instance of iperf in client mode in the client namespace and an instance of iperf in server mode in the server namespace.
+
+### Shell completions
+
+```phantomlink``` provides shell completion support for multiple shells, including **bash**, **elvish**, **fish**, **PowerShell**, **zsh**, and **nushell**. It automatically detects your default shell from the environment, so you don’t need to specify it unless you want to.
+To generate completions for a specific shell, use the command below. phantomlink will output the auto-completion code to stdout, allowing you to pipe it into the auto-completion file appropriate for your shell.
+
+```bash
+phantomlink generate <shell>
+```
+
+
+
 ## 🔍 Structure of ```phantomlink```
 
 ### Input Format
@@ -33,7 +63,7 @@ The `RouteID` column indicates whether there is an actual route change or only u
 Parameters are updated at specified times, creating a step function of changes. For example given the following table:
 
 | Time [ms] | RouteID | Delay [ms] | Btldr [Mbps] |
-|-----------|---------|------------|--------------|
+| --------- | ------- | ---------- | ------------ |
 | 0         | 0       | 41.0       | 80.0         |
 | 11 000    | 0       | 41.2       | 80.2         |
 | 23 000    | 1       | 37.0       | 100.0        |
@@ -88,26 +118,9 @@ The ```phantomlink``` binary is implemented in safe Rust to benefit from Rust’
 
 The functionality and role of each individual component is explained in the paper.
 
-## 🚀 Use ```phantomlink```
-
-> [!WARNING]
-> Phantomlink currently only runs on Linux or the Windows Subsystem for Linux (WSL)
-
-Phantomlink is available for download as a binary here on GitHub.
-At the moment it is still required to setup the namespace environment manually (script).
-We provide a bunch of scripts, which handle the most common operations.
-
-To get started you have to do the following:
-
-  1.  Download the ```phantomlink``` binary, make it executable and move it to `/bin` or `/usr/bin`.
-  2.  Create a new folder and download the scripts folder.
-  3.  Create an `.csv` input file using the table format from above.
-  4.  Double check and execute the `setup.sh` script to create the namespaces, the virtual eth devices and configure them.
-  5.  Double check and run the `run.sh` script to execute an instance of iperf in client mode in the client namespace and an instance of iperf in server mode in the server namespace.
-
 ## � FAQ
 
-### I need help!
+### I need help
 
 Don't hesitate to file an issue or contact one of the authors!
 
@@ -151,4 +164,4 @@ Unless you explicitly state otherwise, any contribution intentionally submitted 
 
 <!-- ALL-CONTRIBUTORS-LIST:END -->
 
-This project follows the [all-contributors](https://github.com/all-contributors/all-contributors) specification. Contributions of any kind welcome!
+This project follows the [all-contributors](https://github.com/all-contributors/all-contributors) specification. Contributions of any kind are welcome 😎.
