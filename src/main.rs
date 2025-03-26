@@ -3,6 +3,7 @@ use std::time::Duration;
 use cli::create_cli;
 use color_eyre::Result;
 use eyre::OptionExt;
+use generator::Shells;
 use log::info;
 use runtime::Runtime;
 use shadow_rs::shadow;
@@ -31,6 +32,7 @@ mod link {
     pub mod pacer;
 }
 mod byte_bounded_channel;
+mod generator;
 mod runtime;
 mod socketstats;
 
@@ -91,8 +93,16 @@ fn main() -> Result<()> {
 
             socketstats::socketstats(output_file_path).unwrap();
         }
+        Some((cli::command::GENERATOR, sub_matches)) => {
+            // parse CLI arguments
+            let shell = sub_matches.get_one::<Shells>(cli::command::GEN_ARG_SHELL).copied();
+
+            match shell {
+                Some(shell) => generator::print_completions(shell)?,
+                None => generator::print_completions_env()?,
+            }
+        }
         _ => unimplemented!("unknown command"),
     }
-    info!("Exit all");
     Ok(())
 }

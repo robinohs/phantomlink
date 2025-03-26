@@ -13,6 +13,8 @@ authors = [
 
 [dependencies]
 clap = { version = "4.5.32" }
+clap_complete = "4.5.47"
+clap_complete_nushell = "4.5.5"
 color-eyre = "0.6.3"
 core_affinity = "0.8.3"
 crossbeam = "0.8.4"
