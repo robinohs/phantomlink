@@ -4,11 +4,12 @@ use pnet::datalink::{self, Channel, ChannelType, Config, NetworkInterface};
 use std::{
     path::Path,
     sync::OnceLock,
+    thread,
     time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
 use uom::si::information::byte;
 
-use crate::{cli::StartupMode, link::oneway_virtual_link::OnewayVirtualLink, route_metrics::RouteMetricQueue};
+use crate::{cli::StartupMode, link::oneway_virtual_link::OnewayVirtualLink, route_metrics::RouteMetricQueue, ReconfigurationMode};
 
 static START_TIME: OnceLock<Instant> = OnceLock::new();
 
@@ -17,6 +18,7 @@ pub struct Runtime {
     startup_mode: StartupMode,
     buffer_size_multiplier: f64,
     reconfiguration_delay: Duration,
+    reconfiguration_mode: ReconfigurationMode,
 }
 
 impl Runtime {
@@ -42,6 +44,7 @@ impl Runtime {
         startup_mode: StartupMode,
         buffer_size_multiplier: f64,
         reconfiguration_delay: Duration,
+        reconfiguration_mode: ReconfigurationMode,
     ) -> Result<Runtime> {
         info!("Creating new phantomlink instance, reading input from {:?}.", input_file_path);
 
@@ -50,6 +53,7 @@ impl Runtime {
             startup_mode,
             buffer_size_multiplier,
             reconfiguration_delay,
+            reconfiguration_mode,
         };
         Ok(rt)
     }
@@ -117,29 +121,21 @@ impl Runtime {
             (Some(cores_1), Some(cores_2))
         };
 
-        let lh1 = OnewayVirtualLink::new(
-            0,
-            self.startup_mode,
-            self.buffer_size_multiplier,
-            rx_client,
-            tx_server,
-            self.route_metric_queue.clone(),
-            self.reconfiguration_delay,
-            cores_1,
-        );
-        let lh2 = OnewayVirtualLink::new(
-            1,
-            self.startup_mode,
-            self.buffer_size_multiplier,
-            rx_server,
-            tx_client,
-            self.route_metric_queue.clone(),
-            self.reconfiguration_delay,
-            cores_2,
-        );
+        let mut ovl1 = OnewayVirtualLink::new(0, self.startup_mode, self.buffer_size_multiplier, cores_1);
+        let mut ovl2 = OnewayVirtualLink::new(1, self.startup_mode, self.buffer_size_multiplier, cores_2);
+        let rmq1 = self.route_metric_queue.clone();
+        let rmq2 = self.route_metric_queue.clone();
+        let rec_delay = self.reconfiguration_delay;
+        let rec_mode = self.reconfiguration_mode;
+        let lh1 = thread::spawn(move || {
+            ovl1.run(rx_client, tx_server, rmq1, rec_delay, rec_mode).unwrap();
+        });
+        let lh2 = thread::spawn(move || {
+            ovl2.run(rx_server, tx_client, rmq2, rec_delay, rec_mode).unwrap();
+        });
 
-        lh1.join();
-        lh2.join();
+        lh1.join().unwrap();
+        lh2.join().unwrap();
 
         info!("Exiting...");
         Ok(())

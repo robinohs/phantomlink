@@ -1,4 +1,4 @@
-use std::time::Duration;
+use std::{error::Error, fmt::Display, time::Duration};
 
 use cli::create_cli;
 use color_eyre::Result;
@@ -7,6 +7,46 @@ use generator::Shells;
 use log::info;
 use runtime::Runtime;
 use shadow_rs::shadow;
+
+#[derive(Debug)]
+struct ParseError(String);
+impl Display for ParseError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&self.0)
+    }
+}
+impl Error for ParseError {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        None
+    }
+
+    fn description(&self) -> &str {
+        "description() is deprecated; use Display"
+    }
+
+    fn cause(&self) -> Option<&dyn Error> {
+        self.source()
+    }
+}
+
+#[derive(Clone, Copy, Debug)]
+enum ReconfigurationMode {
+    #[allow(clippy::upper_case_acronyms)]
+    GSL,
+    All,
+}
+
+impl TryFrom<String> for ReconfigurationMode {
+    type Error = ParseError;
+
+    fn try_from(value: String) -> std::result::Result<Self, Self::Error> {
+        match value.to_lowercase().as_str() {
+            "gsl" => Ok(Self::GSL),
+            "all" => Ok(Self::All),
+            _ => Err(ParseError(format!("{} is not a valid reconfiguration mode.", value))),
+        }
+    }
+}
 
 shadow!(build);
 
@@ -26,7 +66,6 @@ mod route_metrics {
 mod inflight_queue;
 mod link {
     pub mod deliverer;
-    pub mod dispatcher;
     pub mod drainer;
     pub mod oneway_virtual_link;
     pub mod pacer;
@@ -80,8 +119,21 @@ fn main() -> Result<()> {
                 .ok_or_eyre("Could not get reconfiguration delay from arguments")?;
             let reconfiguration_delay = Duration::from_millis(reconfiguration_delay as u64);
 
+            // get reconfiguration mode
+            let reconfiguration_mode = sub_matches
+                .get_one::<String>(cli::command::RUN_ARG_RECONFIGURATION_MODE)
+                .ok_or_eyre("Could not get reconfiguration mode from arguments")?
+                .clone();
+            let reconfiguration_mode = ReconfigurationMode::try_from(reconfiguration_mode)?;
+
             // start command
-            let mut rt = Runtime::new(input_file_path, startup_mode, buffer_size_multiplier, reconfiguration_delay)?;
+            let mut rt = Runtime::new(
+                input_file_path,
+                startup_mode,
+                buffer_size_multiplier,
+                reconfiguration_delay,
+                reconfiguration_mode,
+            )?;
             info!("Running virtual link until receiving Ctrl-C...");
             rt.run().unwrap();
         }

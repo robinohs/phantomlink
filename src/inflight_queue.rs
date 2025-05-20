@@ -75,6 +75,19 @@ impl InflightQueue {
             GetResult::None
         }
     }
+
+    /// Delays all packets by the duration of the reconfiguration.
+    pub fn switch_route(&mut self, reconfiguration_delay: Duration) {
+        let packets = self
+            .packets
+            .drain()
+            .map(|mut pkt| {
+                pkt.0.time += reconfiguration_delay;
+                pkt
+            })
+            .collect::<Vec<_>>();
+        self.packets.extend(packets);
+    }
 }
 
 #[derive(Debug)]
