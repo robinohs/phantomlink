@@ -13,6 +13,7 @@ pub const RUN_ARG_LEVEL: &str = "level";
 pub const RUN_ARG_BUFFER_SIZE_MULTIPLIER: &str = "buffer-size-multiplier";
 pub const RUN_ARG_STARTUP_MODE: &str = "startup-mode";
 pub const RUN_ARG_RECONFIGURATION_DELAY: &str = "reconfiguration-delay";
+pub const RUN_ARG_RECONFIGURATION_MODE: &str = "reconfiguration-mode";
 pub const SOCKETSTATS: &str = "socketstats";
 pub const SS_ARG_OUTPUT_FILE: &str = "output file";
 pub const GENERATOR: &str = "generate";
@@ -56,6 +57,14 @@ pub fn create_cli() -> Command {
                         .default_value("0.0")
                         .help("Milliseconds it takes to reconfigure routes (the Pacer is paused during that time).")
                         .value_parser(clap::value_parser!(f64)),
+                )
+                .arg(
+                    Arg::new(RUN_ARG_RECONFIGURATION_MODE)
+                        .long("reconfiguration-mode")
+                        .required(false)
+                        .default_value("gsl")
+                        .help("Reconfiguration mode can be one of [gsl, all]. ('gsl' is default)")
+                        .value_parser(clap::value_parser!(String)),
                 )
                 .arg(
                     Arg::new(RUN_ARG_STARTUP_MODE)
