@@ -25,26 +25,44 @@ use crate::{
 
 use super::{deliverer::Deliverer, drainer::Drainer, pacer::Pacer};
 
+pub struct OVLCoreConfig {
+    core_id_ovl: CoreId,
+    core_id_deliverer: CoreId,
+    core_id_drainer: CoreId,
+    core_id_pacer: CoreId,
+}
+
+impl OVLCoreConfig {
+    pub fn new_from_vec(mut core_vec: Vec<CoreId>) -> OVLCoreConfig {
+        assert!(core_vec.len() >= 4);
+        OVLCoreConfig {
+            core_id_ovl: core_vec.pop().expect("vector length >= 4"),
+            core_id_deliverer: core_vec.pop().expect("vector length >= 4"),
+            core_id_drainer: core_vec.pop().expect("vector length >= 4"),
+            core_id_pacer: core_vec.pop().expect("vector length >= 4"),
+        }
+    }
+}
+
 pub struct OnewayVirtualLink {
     link_id: usize,
     startup_mode: StartupMode,
     buffer_size_multiplier: f64,
-    core_pool: Option<Vec<CoreId>>,
+    core_config: Option<OVLCoreConfig>,
 }
 
 impl OnewayVirtualLink {
-    #[allow(clippy::too_many_arguments)]
     pub fn new(
         link_id: usize,
         startup_mode: StartupMode,
         buffer_size_multiplier: f64,
-        core_pool: Option<Vec<CoreId>>,
+        core_config: Option<OVLCoreConfig>,
     ) -> OnewayVirtualLink {
         OnewayVirtualLink {
             link_id,
             startup_mode,
             buffer_size_multiplier,
-            core_pool,
+            core_config,
         }
     }
 
@@ -56,11 +74,7 @@ impl OnewayVirtualLink {
         reconfiguration_delay: Duration,
         reconfiguration_mode: ReconfigurationMode,
     ) -> Result<()> {
-        let core_id_ovl = self.core_pool.as_mut().and_then(|cp| cp.pop());
-        let core_id_deliverer = self.core_pool.as_mut().and_then(|cp| cp.pop());
-        let core_id_drainer = self.core_pool.as_mut().and_then(|cp| cp.pop());
-        let core_id_pacer = self.core_pool.as_mut().and_then(|cp| cp.pop());
-
+        let core_id_ovl = self.core_config.as_ref().map(|cfg| cfg.core_id_ovl);
         if let Some(core_id_ovl) = core_id_ovl {
             info!("Link {}: start one-way virtual link (Core: {}).", self.link_id, core_id_ovl.id);
             set_for_current(core_id_ovl);
@@ -84,6 +98,7 @@ impl OnewayVirtualLink {
         // create & start drainer
         let drainer = Arc::new(Drainer::new(self.link_id, self.startup_mode, sender));
         let drainer_clone = drainer.clone();
+        let core_id_drainer = self.core_config.as_ref().map(|cfg| cfg.core_id_drainer);
         let thread_drainer = thread::spawn(move || {
             drainer_clone.run(input, core_id_drainer);
         });
@@ -91,6 +106,7 @@ impl OnewayVirtualLink {
         // create & start pacer
         let pacer = Arc::new(Pacer::create(route_id, receiver, inflight_queue.clone(), btldr, delay));
         let pacer_clone: Arc<Pacer> = pacer.clone();
+        let core_id_pacer = self.core_config.as_ref().map(|cfg| cfg.core_id_pacer);
         let thread_pacer = thread::spawn(move || {
             pacer_clone.run(core_id_pacer);
         });
@@ -99,6 +115,7 @@ impl OnewayVirtualLink {
         let inflight_queue_sender = inflight_queue.clone();
         let deliverer_reconfig_until = Arc::new(AtomicCell::new(None));
         let mut deliverer = Deliverer::new(self.link_id, inflight_queue_sender, deliverer_reconfig_until.clone());
+        let core_id_deliverer = self.core_config.as_ref().map(|cfg| cfg.core_id_deliverer);
         let thread_sender = thread::spawn(move || {
             deliverer.run(output, core_id_deliverer);
         });
