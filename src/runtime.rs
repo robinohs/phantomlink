@@ -9,7 +9,12 @@ use std::{
 };
 use uom::si::information::byte;
 
-use crate::{cli::StartupMode, link::oneway_virtual_link::OnewayVirtualLink, route_metrics::RouteMetricQueue, ReconfigurationMode};
+use crate::{
+    cli::StartupMode,
+    link::oneway_virtual_link::{OVLCoreConfig, OnewayVirtualLink},
+    route_metrics::RouteMetricQueue,
+    ReconfigurationMode,
+};
 
 static START_TIME: OnceLock<Instant> = OnceLock::new();
 
@@ -111,13 +116,14 @@ impl Runtime {
         // Get list of available "cores"
         let mut cores = core_affinity::get_core_ids().ok_or_eyre("Could not get list of available cores")?;
         cores.retain(|core_id| core_id.id >= 2 && core_id.id != 16 && core_id.id != 17); // remove cores 0 & 1 (and their thread siblings) reserved for iperf
-        let (cores_1, cores_2) = if cores.len() < 10 {
-            info!("Disable CPU core pinning (found {} cores, which is less than 10)", cores.len());
+        let (cores_1, cores_2) = if cores.len() < 8 {
+            info!("Disable CPU core pinning (found {} cores, which is less than 8)", cores.len());
             (None, None)
         } else {
             info!("Enable CPU core pinning (found {} cores)", cores.len());
             // give 50% of cores to each OnewayVirtualLink taking into account thread sibling pairings (e.g. 0 & 16, 1 & 17, ...)
             let (cores_1, cores_2) = cores.into_iter().partition(|core_id| core_id.id % 2 == 0);
+            let (cores_1, cores_2) = (OVLCoreConfig::new_from_vec(cores_1), OVLCoreConfig::new_from_vec(cores_2));
             (Some(cores_1), Some(cores_2))
         };
 
