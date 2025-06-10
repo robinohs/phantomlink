@@ -1,5 +1,4 @@
 use std::{
-    path::Path,
     thread::sleep,
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
@@ -17,6 +16,8 @@ use netlink_packet_sock_diag::{
     SockDiagMessage,
 };
 use netlink_sys::{protocols::NETLINK_SOCK_DIAG, Socket, SocketAddr};
+
+use crate::cli::opt::SocketstatsArgs;
 
 const SLEEP_DUR: Duration = Duration::from_millis(250);
 
@@ -201,7 +202,7 @@ fn format_tcp_info_record(tcp_info: &TcpInfo) -> Result<[String; 8]> {
 }
 
 /// Runs the socket stats collector and exports the received statistics to a .csv file.
-pub fn socketstats(output_path: &Path) -> Result<()> {
+pub fn run(socketstats_args: SocketstatsArgs) -> Result<()> {
     let socket = connect_socket().unwrap();
     info!("Running socketstats until receiving Ctrl-C...");
 
@@ -212,7 +213,7 @@ pub fn socketstats(output_path: &Path) -> Result<()> {
         extract_cong_alg(&inet_response)?
     );
 
-    let mut wtr = csv::Writer::from_path(output_path)?;
+    let mut wtr = csv::Writer::from_path(socketstats_args.output_file)?;
     wtr.write_record(FORMAT_TCP_INFO_HEADER)?;
 
     let tcp_info = extract_tcp_info(inet_response)?;

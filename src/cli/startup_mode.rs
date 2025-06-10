@@ -2,7 +2,7 @@ use clap::{builder::PossibleValue, ValueEnum};
 use etherparse::PacketHeaders;
 use eyre::Result;
 
-#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub enum StartupMode {
     AppStart,
     FirstPacket,
@@ -10,7 +10,6 @@ pub enum StartupMode {
     FirstLargeTransportPacket,
 }
 
-// Can also be derived with feature flag `derive`
 impl ValueEnum for StartupMode {
     fn value_variants<'a>() -> &'a [Self] {
         &[
@@ -23,15 +22,14 @@ impl ValueEnum for StartupMode {
 
     fn to_possible_value<'a>(&self) -> Option<PossibleValue> {
         Some(match self {
-            StartupMode::AppStart => PossibleValue::new("app-start").help("phantomlink immediately starts following input."),
+            StartupMode::AppStart => PossibleValue::new("app-start").help("phantomlink immediately starts to follow the input file"),
             StartupMode::FirstPacket => {
-                PossibleValue::new("first-packet").help("phantomlink starts following input after arrival of first packet")
+                PossibleValue::new("first-packet").help("phantomlink starts to follow the input file after arrival of the first packet")
             }
-            StartupMode::FirstTransportPacket => {
-                PossibleValue::new("first-transport-packet").help("phantomlink starts following input after first TCP/UDP packet.")
-            }
+            StartupMode::FirstTransportPacket => PossibleValue::new("first-transport-packet")
+                .help("phantomlink starts to follow the input file after arrival of the first UDP/TCP packet"),
             StartupMode::FirstLargeTransportPacket => PossibleValue::new("first-large-transport-packet")
-                .help("phantomlink starts following input after first TCP/UDP packet with >1500 bytes."),
+                .help("phantomlink starts to follow the input file after the first TCP/UDP packet with >1500 bytes."),
         })
     }
 }
@@ -63,7 +61,7 @@ impl StartupMode {
         }
 
         // check if minimal size is satisfied
-        if data.len() < self.get_min_size() {
+        if data.len() <= self.get_min_size() {
             return false;
         }
 
