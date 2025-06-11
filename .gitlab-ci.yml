@@ -1,22 +1,13 @@
 stages:
-  - 📦 Build
   - 🔬 Static Analysis
+  - 📦 Build
   - 🤞🏼 Testing
 
 default:
-  image: rust:1.83
-
-🚧 cargo-build:
-  stage: 📦 Build
-  script:
-    - cargo build
-  artifacts:
-    expire_in: 1 day
-    paths: [target]
+  image: rust:1.87
 
 🎨 cargo-fmt:
   stage: 🔬 Static Analysis
-  needs: []
   before_script:
     - rustup component add rustfmt
   script:
@@ -24,15 +15,29 @@ default:
 
 📎 cargo-clippy:
   stage: 🔬 Static Analysis
-  needs: []
   before_script:
     - rustup component add clippy
   script:
     - cargo clippy --all-features --all-targets -- --deny warnings
 
+📦 cargo-udeps:
+  stage: 🔬 Static Analysis
+  before_script:
+    - curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
+    - cargo binstall --no-confirm cargo-udeps
+  script:
+    - cargo +nightly udeps -q
+
+🚨 cargo-audit:
+  stage: 🔬 Static Analysis
+  before_script:
+    - curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
+    - cargo binstall --no-confirm cargo-audit
+  script:
+    - cargo audit -q
+
 📈 rust-lsif:
   stage: 🔬 Static Analysis
-  needs: []
   allow_failure: true # recommended
   before_script:
     - rustup component add rust-analyzer
@@ -41,6 +46,14 @@ default:
   artifacts:
     reports:
       lsif: dump.lsif
+
+🚧 cargo-build:
+  stage: 📦 Build
+  script:
+    - cargo build
+  artifacts:
+    expire_in: 1 day
+    paths: [target]
 
 ✅ cargo-nextest:
   stage: 🤞🏼 Testing
