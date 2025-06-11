@@ -3,9 +3,10 @@ use camino::Utf8PathBuf;
 use crate::{
     build,
     cli::{ReconfigurationMode, StartupMode},
+    phork::namespace::{NS_NAME_CLIENT, NS_NAME_SERVER},
     Shells,
 };
-use clap::{arg, command, Args, Parser, Subcommand};
+use clap::{arg, command, Args, Parser, Subcommand, ValueEnum};
 
 #[derive(Debug, Parser)]
 #[command(name = "phantomlink")]
@@ -21,6 +22,12 @@ pub struct Opt {
 pub enum Commands {
     #[command(about = "Start the main virtual link runtime")]
     Start(StartArgs),
+    #[command(about = "Execute a command in the virtual link environment")]
+    Exec(ExecArgs),
+    #[command(about = "Setup the network environment")]
+    Setup,
+    #[command(about = "Tear down the network environment")]
+    Teardown,
     #[command(about = "Start the socket stats logger")]
     SocketStats(SocketstatsArgs),
     #[command(about = "Generate shell completions")]
@@ -57,6 +64,34 @@ pub struct StartArgs {
         required = false
     )]
     pub startup_mode: StartupMode,
+}
+
+#[derive(ValueEnum, Debug, Clone)]
+pub enum ExecNamespaces {
+    Client,
+    Server,
+}
+
+impl ExecNamespaces {
+    pub fn as_str(&self) -> &str {
+        match self {
+            ExecNamespaces::Client => NS_NAME_CLIENT,
+            ExecNamespaces::Server => NS_NAME_SERVER,
+        }
+    }
+}
+
+#[derive(Args, Debug)]
+pub struct ExecArgs {
+    #[clap(help = "The namespace in which the command is to be executed", value_enum, required = true)]
+    pub namespace: ExecNamespaces,
+    #[arg(
+        required(true),
+        help = "The command to be executed in the virtual link environment",
+        trailing_var_arg(true)
+    )]
+    //we activate trailing_var_arg to ignore flags in the program we want to run internally
+    pub command: Vec<String>,
 }
 
 #[derive(Args, Debug)]
