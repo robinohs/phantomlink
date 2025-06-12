@@ -1,5 +1,4 @@
-use color_eyre::eyre::{anyhow, Result};
-use std::process::{Command, Output};
+use std::process::{Command, ExitStatus, Output};
 
 // pub(crate) fn log(level: &str, args: &[String]) -> Result<()> {
 //     let namespace = netns_out(&["identify"])?;
@@ -14,15 +13,15 @@ use std::process::{Command, Output};
 //     Ok(())
 // }
 
-// #[track_caller]
-// pub(crate) fn exec(cmd: &str, args: &[&str]) -> Result<ExitStatus> {
-//     let res = Command::new(cmd).args(args).status()?;
-//     if res.success() {
-//         Ok(res)
-//     } else {
-//         Err(anyhow!("Fail: `{} {}`", cmd, args.join(" ")))
-//     }
-// }
+#[track_caller]
+pub(crate) fn exec(cmd: &str, args: &[&str]) -> eyre::Result<ExitStatus> {
+    let res = Command::new(cmd).args(args).status()?;
+    if res.success() {
+        Ok(res)
+    } else {
+        Err(eyre::eyre!("Fail: `{} {}`", cmd, args.join(" ")))
+    }
+}
 
 // #[track_caller]
 // pub(crate) fn spawn(cmd: &str, args: &[&str]) -> Result<Child> {
@@ -30,12 +29,12 @@ use std::process::{Command, Output};
 // }
 
 #[track_caller]
-pub(crate) fn ip(cmd: &str, args: &[&str]) -> Result<Output> {
+pub(crate) fn ip(cmd: &str, args: &[&str]) -> eyre::Result<Output> {
     let res = Command::new("ip").arg(cmd).args(args).output()?;
     if res.status.success() {
         Ok(res)
     } else {
-        Err(anyhow!(
+        Err(eyre::eyre!(
             "Fail: `ip {} {}`\n{}\n{}",
             cmd,
             args.join(" "),
@@ -46,12 +45,12 @@ pub(crate) fn ip(cmd: &str, args: &[&str]) -> Result<Output> {
 }
 
 #[track_caller]
-pub(crate) fn netns(args: &[&str]) -> Result<Output> {
+pub(crate) fn netns(args: &[&str]) -> eyre::Result<Output> {
     ip("netns", args)
 }
 
 #[track_caller]
-pub(crate) fn link(args: &[&str]) -> Result<Output> {
+pub(crate) fn link(args: &[&str]) -> eyre::Result<Output> {
     ip("link", args)
 }
 

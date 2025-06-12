@@ -1,4 +1,4 @@
-use color_eyre::eyre;
+use eyre;
 use libc::{setns, CLONE_NEWNET};
 use std::fs::File;
 use std::os::fd::AsRawFd;
@@ -14,6 +14,7 @@ const NAMESPACES: [&str; 3] = [NS_NAME_CLIENT, NS_NAME_LINK, NS_NAME_SERVER];
 const VETH_1: &str = "veth1";
 const VETH_2: &str = "veth2";
 
+/// Checks if the network environment is set up.
 pub(crate) fn is_setup() -> eyre::Result<bool> {
     for ns in NAMESPACES {
         if Namespace::try_exists(ns)? {
@@ -23,12 +24,14 @@ pub(crate) fn is_setup() -> eyre::Result<bool> {
     Ok(false)
 }
 
+/// Sets up the network namespaces and virtual ethernet links for the phork environment.
 pub(crate) fn setup() -> eyre::Result<()> {
     // create namespaces
     for ns in NAMESPACES {
         Namespace::try_create(ns)?;
     }
 
+    // configure virtual ethernet links
     let veths = [
         VEth::new(
             VETH_1,
@@ -61,13 +64,14 @@ pub(crate) fn setup() -> eyre::Result<()> {
         veth.set_default_route()?;
     }
 
-    // let ns_id = 1;
+    let ns_id = 1;
     // // TODO: get NS id symlink
-    // exec("ln", &["-sf", &format!("/proc/{}/ns/net", ns_id), "/var/run/netns/default"])?;
+    exec("ln", &["-sf", &format!("/proc/{}/ns/net", ns_id), "/var/run/netns/default"])?;
 
     Ok(())
 }
 
+/// Cleans up the network namespaces and virtual ethernet links created by the setup function.
 pub(crate) fn clean() -> eyre::Result<()> {
     for ns in NAMESPACES {
         match Namespace::try_load(ns) {
@@ -84,14 +88,22 @@ pub(crate) fn clean() -> eyre::Result<()> {
             }
         }
     }
+
+    // Clean up default namespace symlink
+    let default_ns_path = Path::new("/var/run/netns/default");
+    if default_ns_path.exists() {
+        std::fs::remove_file(default_ns_path)?;
+    }
     Ok(())
 }
 
+/// Represents a network namespace.
 pub struct Namespace {
     name: String,
 }
 
 impl Namespace {
+    /// Creates a new Namespace instance with the given name.
     pub fn try_create(name: &str) -> eyre::Result<Self> {
         if Namespace::try_exists(name)? {
             return Err(eyre::eyre!("Namespace '{}' already exists", name));
@@ -100,6 +112,7 @@ impl Namespace {
         Ok(Namespace { name: name.to_string() })
     }
 
+    /// Loads an existing Namespace instance by name.
     pub fn try_load(name: &str) -> eyre::Result<Self> {
         if !Namespace::try_exists(name)? {
             return Err(eyre::eyre!("Namespace '{}' does not exist", name));
@@ -107,21 +120,18 @@ impl Namespace {
         Ok(Namespace { name: name.to_string() })
     }
 
-    // pub fn try_load_for_pid(pid: u32) -> eyre::Result<Self> {
-    //     let name = netns_out(&["identify", pid.to_string().as_str()])
-    //         .map_err(|e| eyre::eyre!("Failed to identify namespace for PID {}: {}", pid, e))?;
-    //     Ok(Namespace { name })
-    // }
-
+    /// Checks if a namespace with the given name exists.
     pub fn try_exists(name: &str) -> eyre::Result<bool> {
         Ok(Namespace { name: name.to_string() }.path().try_exists()?)
     }
 
+    /// Deletes the namespace.
     pub fn try_delete(self) -> eyre::Result<()> {
         netns(&["del", &self.name])?;
         Ok(())
     }
 
+    /// Moves the calling process to the network namespace.
     pub fn try_switch_calling_pid_to_namespace(&self) -> eyre::Result<()> {
         let ns_path = self.path();
         let ns_fd = File::open(ns_path).map_err(|e| eyre::eyre!("Failed to open namespace file: {}", e))?;
@@ -133,10 +143,7 @@ impl Namespace {
         Ok(())
     }
 
-    // pub fn get_name(&self) -> &str {
-    //     &self.name
-    // }
-
+    /// Returns the fs path to the namespace.
     fn path(&self) -> PathBuf {
         Path::new(&format!("/var/run/netns/{}", self.name)).to_path_buf()
     }
