@@ -27,19 +27,28 @@ With the ability to reorder, delay, pace, and drop packets, ```phantomlink``` ca
 > [!WARNING]
 > Phantomlink currently only runs on Linux or the Windows Subsystem for Linux (WSL)
 
-Phantomlink is available for download as a binary here on GitHub.
-At the moment it is still required to setup the namespace environment manually (script).
-We provide a bunch of scripts, which handle the most common operations.
+Phantomlink is available for download here on GitHub.
 
 ### Installation
 
+#### Debian/Ubuntu
+
+  1. Download the ```phantomlink``` debian package.
+  2. Install the package using (replace [version] with the downloaded version):
+  ```sh
+  sudo apt install ~/downloads/phantomlink_[version].deb 
+  ```
+
+#### Other Distros
+
 To get started you have to do the following:
 
-  1.  Download the ```phantomlink``` binary, make it executable and move it to `/bin` or `/usr/bin`.
-  2.  Create a new folder and download the scripts folder.
-  3.  Create an `.csv` input file using the table format from above.
-  4.  Double check and execute the `setup.sh` script to create the namespaces, the virtual eth devices and configure them.
-  5.  Double check and run the `run.sh` script to execute an instance of iperf in client mode in the client namespace and an instance of iperf in server mode in the server namespace.
+  1. Download the ```phantomlink``` binary.
+  2. Make the binary executable using:
+  ```bash
+  chmod +x phantomlink_[version]
+  ```
+  3. Move the binary to `/bin`.
 
 ### Shell completions
 
@@ -50,7 +59,33 @@ To generate completions for a specific shell, use the command below. phantomlink
 phantomlink generate <shell>
 ```
 
+### Quick-start
 
+  1. Download the [input.csv](examples/input.csv) file from examples.
+  2. Setup the network environment:
+  ```bash
+  phantomlink setup
+  ```
+  3. Start the main virtual link (assuming the input file is in ~/Downloads):
+  ```bash
+  phantomlink start ~/Downloads/input.csv
+  ```
+  4. Start an application in the server network namespace:
+  ```bash
+  phantomlink exec server iperf3 -s --port 5000
+  ```
+  5. Start an application in the client network namespace:
+  ```bash
+  phantomlink exec client iperf3 -c 192.168.66.2 --port 5000
+  ```
+  6. To get informations about the client or server network namespace you can use:
+  ```bash
+  phantomlink exec <client/server> ifconfig
+  ```
+  7. After the experiment has finished, you can teardown the network environment:
+  ```bash
+  phantomlink teardown
+  ```
 
 ## 🔍 Structure of ```phantomlink```
 
