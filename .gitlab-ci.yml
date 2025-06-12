@@ -1,7 +1,8 @@
 stages:
   - 🔬 Static Analysis
-  - 📦 Build
+  - 👷 Build
   - 🤞🏼 Testing
+  - 📦 Package
 
 default:
   image: rust:1.87
@@ -48,9 +49,9 @@ default:
       lsif: dump.lsif
 
 🚧 cargo-build:
-  stage: 📦 Build
+  stage: 👷 Build
   script:
-    - cargo build
+    - cargo build --release
   artifacts:
     expire_in: 1 day
     paths: [target]
@@ -66,3 +67,13 @@ default:
     paths: [target/nextest/ci/junit.xml]
     reports:
       junit: target/nextest/ci/junit.xml
+
+🐧 package:
+  stage: 📦 Package
+  needs:
+    - 🚧 cargo-build
+    - ✅ cargo-nextest
+  script:
+    - bash .github/scripts/create_deb.sh
+  artifacts:
+    paths: ["*.deb"]

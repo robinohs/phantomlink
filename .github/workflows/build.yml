@@ -12,44 +12,39 @@ on:
   workflow_dispatch:
 
 jobs:
+  tests:
+    uses: ./.github/workflows/test.yml
+
   build:
     runs-on: ubuntu-latest
+    needs: [tests]
     name: 🚧 Build
     steps:
       - uses: actions/checkout@v4
       - run: cargo build --release
-      - name: Upload release artifact
+      - name: Upload binary artifact
         uses: actions/upload-artifact@v4
         with:
           name: phantomlink
           path: target/release/phantomlink
 
-  ensure-cargo-fmt:
+  package:
     runs-on: ubuntu-latest
-    name: 🎨 Format
+    name: 🐧 Package
+    needs: [build]
     steps:
       - uses: actions/checkout@v4
-      - run: cargo fmt -- --check
-
-  ensure-cargo-audit:
-    runs-on: ubuntu-latest
-    name: 🔒 Audit
-    steps:
-      - run: cargo install cargo-audit --locked
-      - uses: actions/checkout@v4
-      - run: cargo audit
-  
-  ensure-cargo-test:
-    runs-on: ubuntu-latest
-    name: 🧪 Test
-    steps:
-      - uses: actions/checkout@v4
-      - run: cargo test
-
-  ensure-cargo-clippy:
-    runs-on: ubuntu-latest
-    name: 📎 Clippy
-    steps:
-      - uses: actions/checkout@v4
-      - run: cargo clippy
-
+      - uses: actions/download-artifact@v4
+        with:
+          name: phantomlink
+      - name: Reset Rust folder structure
+        run: |
+          mkdir -p target/release
+          mv phantomlink target/release/phantomlink
+      - name: Create debian package
+        run: bash ./.github/scripts/create_deb.sh
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: phantomlink_deb
+          path: "*.deb"
