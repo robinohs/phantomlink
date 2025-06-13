@@ -39,9 +39,5 @@ preferred-citation:
     given-names: "Andreas"
     orcid: "https://orcid.org/0000-0002-7113-7376"
   journal: "ANRW'25"
-  doi: "10.0000/00000"
+  doi: "10.1145/3744200.3744758"
   year: 2025
-# doi: 10.5281/zenodo.1234
-# date-released: 2025-07-19
-#license: "Apache-2.0 OR MIT"
-# url: "https://github.com/robinohs/phantomlink"
