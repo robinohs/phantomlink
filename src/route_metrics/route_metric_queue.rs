@@ -1,7 +1,7 @@
 use std::{collections::VecDeque, fs::File, path::Path, time::Duration};
 
 use eyre::{bail, Context, Result};
-use log::{debug, info};
+use log::debug;
 use uom::si::{information::byte, information_rate::byte_per_second, u64::Information};
 
 use crate::route_metrics::route_metric::RouteMetricRaw;
@@ -16,7 +16,7 @@ pub struct RouteMetricQueue {
 
 impl RouteMetricQueue {
     pub fn try_load(path: &Path) -> Result<Self> {
-        info!("Start loading data points from {:?}", path);
+        debug!("Start loading data points from {:?}", path);
         let file = File::open(path).with_context(|| format!("Failed to read from input path `{:?}`.", path))?;
         let mut rdr = csv::Reader::from_reader(file);
 
