@@ -64,8 +64,8 @@ pub(crate) fn setup() -> eyre::Result<()> {
         veth.set_default_route()?;
     }
 
+    // assuming the default namespace is the one with ID 1
     let ns_id = 1;
-    // // TODO: get NS id symlink
     exec("ln", &["-sf", &format!("/proc/{}/ns/net", ns_id), "/var/run/netns/default"])?;
 
     Ok(())
