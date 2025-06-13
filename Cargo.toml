@@ -8,6 +8,24 @@ authors = [
     "Robin Ohs <ohs@depend.uni-saarland.de>",
     "Gregory Stock <stock@depend.uni-saarland.de>",
 ]
+keywords = [
+    "linux",
+    "network-emulator",
+    "network-emulation",
+    "virtual-link",
+    "constellations",
+    "aerospace",
+    "command-line",
+]
+categories = [
+    "network-programming",
+    "science",
+    "aerospace::simulation",
+    "command-line-utilities",
+    "simulation",
+]
+license = "MIT OR Apache-2.0"
+description = "phantomlink looks like a multi-hop Internet path, but emulates a virtual end-to-end link"
 
 [package.metadata.cargo-udeps.ignore]
 normal = ["husky-rs"]
