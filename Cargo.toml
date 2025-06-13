@@ -24,8 +24,10 @@ categories = [
     "command-line-utilities",
     "simulation",
 ]
+repository = "https://github.com/robinohs/phantomlink"
 license = "MIT OR Apache-2.0"
 description = "phantomlink looks like a multi-hop Internet path, but emulates a virtual end-to-end link"
+include = ["build.rs", "src/**/*.rs", "Cargo.toml"]
 
 [package.metadata.cargo-udeps.ignore]
 normal = ["husky-rs"]
