@@ -140,6 +140,8 @@ impl Runtime {
             ovl2.run(rx_server, tx_client, rmq2, rec_delay, rec_mode).unwrap();
         });
 
+        info!("Phantomlink ready, waiting for first packet...");
+
         lh1.join().unwrap();
         lh2.join().unwrap();
 

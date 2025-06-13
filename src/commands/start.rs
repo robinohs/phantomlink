@@ -1,7 +1,5 @@
 use std::time::Duration;
 
-use log::info;
-
 use crate::{cli::opt::StartArgs, commands::utils, phork::namespace::NS_NAME_LINK, runtime::Runtime};
 
 pub(crate) fn run(start_args: StartArgs) -> eyre::Result<()> {
@@ -23,7 +21,6 @@ pub(crate) fn run(start_args: StartArgs) -> eyre::Result<()> {
         reconfiguration_delay,
         start_args.reconfiguration_mode,
     )?;
-    info!("Running phantomlink until receiving Ctrl-C...");
     rt.run().unwrap();
     Ok(())
 }
