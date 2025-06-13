@@ -27,8 +27,6 @@ With the ability to reorder, delay, pace, and drop packets, ```phantomlink``` ca
 > [!WARNING]
 > Phantomlink currently only runs on Linux or the Windows Subsystem for Linux (WSL)
 
-Phantomlink is available for download here on GitHub.
-
 ### Installation
 
 #### Debian/Ubuntu
@@ -50,10 +48,49 @@ To get started you have to do the following:
   ```
   3. Move the binary to `/bin`.
 
+#### Build from source
+
+It is also possible to build the `phantomlink` binary from source.
+
+##### Prerequisites
+- Git installed on your system.
+- Rust and Cargo installed (for building the binary).
+
+##### Option 1: Manual Build
+1. Clone the `phantomlink` repository from GitHub:
+```bash
+git clone https://github.com/robinohs/phantomlink
+```
+2. Navigate to the cloned repository and build the binary using Cargo:
+```bash
+cargo build --release
+```
+3. Move the binary to a directory that is in your system's PATH:
+```bash
+sudo mv target/release/phantomlink /bin/
+```
+
+##### Option 2: Use the Install Script
+1. Clone the ```phantomlink``` repository from GitHub:
+```bash
+git clone https://github.com/robinohs/phantomlink
+```
+2. Navigate to the repository and execute the provided `install.sh` script:
+```bash
+cd phantomlink
+./install.sh
+```
+
+### Notes
+Verify ```phantomlink``` is correctly installed by running:
+```bash
+phantomlink --version
+```
+
 ### Shell completions
 
 ```phantomlink``` provides shell completion support for multiple shells, including **bash**, **elvish**, **fish**, **PowerShell**, **zsh**, and **nushell**. It automatically detects your default shell from the environment, so you don’t need to specify it unless you want to.
-To generate completions for a specific shell, use the command below. phantomlink will output the auto-completion code to stdout, allowing you to pipe it into the auto-completion file appropriate for your shell.
+To generate completions for a specific shell, use the command below. ```phantomlink``` will output the auto-completion code to stdout, allowing you to pipe it into the auto-completion file appropriate for your shell.
 
 ```bash
 phantomlink generate <shell>
