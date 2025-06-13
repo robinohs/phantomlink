@@ -7,7 +7,7 @@ use std::{
 use core_affinity::{set_for_current, CoreId};
 use crossbeam::atomic::AtomicCell;
 use eyre::{OptionExt, Result};
-use log::{debug, info};
+use log::debug;
 use pnet::datalink::{DataLinkReceiver, DataLinkSender};
 use spin_sleep::SpinSleeper;
 use thread_priority::{set_current_thread_priority, ThreadPriority};
@@ -76,10 +76,10 @@ impl OnewayVirtualLink {
     ) -> Result<()> {
         let core_id_ovl = self.core_config.as_ref().map(|cfg| cfg.core_id_ovl);
         if let Some(core_id_ovl) = core_id_ovl {
-            info!("Link {}: start one-way virtual link (Core: {}).", self.link_id, core_id_ovl.id);
+            debug!("Link {}: start one-way virtual link (Core: {}).", self.link_id, core_id_ovl.id);
             set_for_current(core_id_ovl);
         } else {
-            info!("Link {}: start one-way virtual link.", self.link_id);
+            debug!("Link {}: start one-way virtual link.", self.link_id);
         }
         set_current_thread_priority(ThreadPriority::Max).expect("Could not set thread priority to MAX.");
 

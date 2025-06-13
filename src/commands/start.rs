@@ -23,7 +23,7 @@ pub(crate) fn run(start_args: StartArgs) -> eyre::Result<()> {
         reconfiguration_delay,
         start_args.reconfiguration_mode,
     )?;
-    info!("Running virtual link until receiving Ctrl-C...");
+    info!("Running phantomlink until receiving Ctrl-C...");
     rt.run().unwrap();
     Ok(())
 }

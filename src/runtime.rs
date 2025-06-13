@@ -1,5 +1,5 @@
-use eyre::{bail, eyre, OptionExt, Result};
-use log::info;
+use eyre::{bail, OptionExt, Result};
+use log::{debug, info};
 use pnet::datalink::{self, Channel, ChannelType, Config, NetworkInterface};
 use std::{
     path::Path,
@@ -65,7 +65,7 @@ impl Runtime {
 
     /// Starts the runtime loop for packet delaying including listening on the given NICs.
     pub fn run(&mut self) -> Result<()> {
-        info!("Starting runtime");
+        debug!("Starting runtime.");
 
         self.set_socket_parameters()?;
 
@@ -117,10 +117,10 @@ impl Runtime {
         let mut cores = core_affinity::get_core_ids().ok_or_eyre("Could not get list of available cores")?;
         cores.retain(|core_id| core_id.id >= 2 && core_id.id != 16 && core_id.id != 17); // remove cores 0 & 1 (and their thread siblings) reserved for iperf
         let (cores_1, cores_2) = if cores.len() < 8 {
-            info!("Disable CPU core pinning (found {} cores, which is less than 8)", cores.len());
+            debug!("Disable CPU core pinning (found {} cores, which is less than 8)", cores.len());
             (None, None)
         } else {
-            info!("Enable CPU core pinning (found {} cores)", cores.len());
+            debug!("Enable CPU core pinning (found {} cores)", cores.len());
             // give 50% of cores to each OnewayVirtualLink taking into account thread sibling pairings (e.g. 0 & 16, 1 & 17, ...)
             let (cores_1, cores_2) = cores.into_iter().partition(|core_id| core_id.id % 2 == 0);
             let (cores_1, cores_2) = (OVLCoreConfig::new_from_vec(cores_1), OVLCoreConfig::new_from_vec(cores_2));
@@ -171,10 +171,10 @@ fn set_kernel_param(param: &str) -> Result<()> {
         .arg(param)
         .output()?;
     if output.status.success() {
-        info!("{}", std::str::from_utf8(&output.stdout)?.trim_end());
+        debug!("{}", std::str::from_utf8(&output.stdout)?.trim_end());
         Ok(())
     } else {
-        Err(eyre!(
+        Err(eyre::eyre!(
             "Could not set kernel parameter \"{param}\". Stderr: {}",
             std::str::from_utf8(&output.stderr)?
         ))
