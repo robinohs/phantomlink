@@ -2,6 +2,7 @@
 name = "phantomlink"
 version = "0.1.0"
 edition = "2021"
+rust-version = "1.83.0"
 build = "build.rs"
 authors = [
     "Andreas Schmidt <schmidt@depend.uni-saarland.de>",
@@ -24,6 +25,7 @@ categories = [
     "command-line-utilities",
     "simulation",
 ]
+readme = "README.md"
 repository = "https://github.com/robinohs/phantomlink"
 license = "MIT OR Apache-2.0"
 description = "phantomlink looks like a multi-hop Internet path, but emulates a virtual end-to-end link"
