@@ -149,7 +149,7 @@ Parameters are updated at specified times, creating a step function of changes. 
 ### Architecture
 
 <p align="center">
-  <img src="./docs/images/overview.png" alt="Tool overview" width="750px">
+  <img src="./docs/images/overview.png" alt="Tool overview" width="1000px">
 </p>
 
 At its core, the ```phantomlink``` toolchain has a binary that operates in conjunction with Linux network namespaces and virtual Ethernet devices.
@@ -171,7 +171,7 @@ To allow traffic to flow from the client to the server namespace and vice-versa,
 ### Core Binary
 
 <p align="center">
-  <img src="./docs/images/binary.png" alt="Binary structure" width="750px">
+  <img src="./docs/images/binary.png" alt="Binary structure" width="1000px">
 </p>
 
 The ```phantomlink``` binary is implemented in safe Rust to benefit from Rust’s performance and memory safety. The internal binary structure is depicted in the picture above.
