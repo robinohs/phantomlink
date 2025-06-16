@@ -1,5 +1,6 @@
+use crossbeam::channel::Receiver;
 use eyre::{bail, OptionExt, Result};
-use log::{debug, info};
+use log::{debug, error, info};
 use pnet::datalink::{self, Channel, ChannelType, Config, NetworkInterface};
 use std::{
     collections::HashMap,
@@ -10,7 +11,6 @@ use std::{
     time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
 use tempfile::NamedTempFile;
-use tokio::sync::oneshot::Receiver;
 use uom::si::information::byte;
 
 use crate::{
@@ -150,11 +150,11 @@ impl Runtime {
 
         // Handle shutdown signal
         // This thread will block until a shutdown signal is received.
-        thread::spawn(move || {
-            stop_rx.blocking_recv().unwrap_or_else(|_| {
-                eprintln!("Failed to receive shutdown signal.");
-            });
-            info!("Received shutdown signal, stopping phantomlink...");
+        thread::spawn(move || match stop_rx.recv() {
+            Ok(_) => info!("Received shutdown signal, stopping phantomlink..."),
+            Err(e) => {
+                error!("Error receiving shutdown signal: {}", e);
+            }
         })
         .join()
         .unwrap();
