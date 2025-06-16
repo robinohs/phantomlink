@@ -1023,7 +1023,6 @@ dependencies = [
  "tempfile",
  "thiserror 2.0.12",
  "thread-priority",
- "tokio",
  "uom",
 ]
 
@@ -1459,16 +1458,6 @@ checksum = "5d4f6d1145dcb577acf783d4e601bc1d76a13337bb54e6233add580b07344c8b"
 dependencies = [
  "displaydoc",
  "zerovec",
-]
-
-[[package]]
-name = "tokio"
-version = "1.45.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "75ef51a33ef1da925cea3e4eb122833cb377c61439ca401b770f54902b806779"
-dependencies = [
- "backtrace",
- "pin-project-lite",
 ]
 
 [[package]]

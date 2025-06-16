@@ -6,8 +6,8 @@ use std::{
     time::Duration,
 };
 
+use crossbeam::channel::unbounded;
 use log::warn;
-use tokio::sync::oneshot;
 
 use crate::{cli::opt::StartArgs, commands::utils, phork::namespace::NS_NAME_LINK, runtime::Runtime};
 
@@ -23,19 +23,16 @@ pub(crate) fn run(start_args: StartArgs) -> eyre::Result<()> {
     let reconfiguration_delay = Duration::from_micros(micros_reconfiguration_delay);
 
     // set up Ctrl-C handler for cleanup before exit
-    let (tx, rx) = oneshot::channel::<()>();
-    let mut tx = Option::Some(tx);
+    let (tx, rx) = unbounded::<()>();
     let exiting = Arc::new(AtomicBool::new(false));
     ctrlc::set_handler(move || {
         if exiting.load(Ordering::Relaxed) {
             warn!("Ctrl-C received twice, exiting ungracefully. This may leave the network environment in an inconsistent state.");
             std::process::exit(1);
         } else {
-            if let Some(tx) = tx.take() {
-                tx.send(()).unwrap_or_else(|_| {
-                    eprintln!("Failed to send shutdown signal.");
-                });
-            }
+            tx.send(()).unwrap_or_else(|_| {
+                eprintln!("Failed to send shutdown signal.");
+            });
             exiting.store(true, Ordering::Relaxed);
         }
     })
