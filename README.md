@@ -205,7 +205,7 @@ Any contributions are very welcome!
 
 ## 🏛 License
 
-`Phantomlink` is dual-licensed under [Apache License, Version 2.0](https://github.com/robinohs/phantomlink/blob/main/LICENSE-APACHE) and [MIT License](https://github.com/robinohs/phantomlink/blob/main/LICENSE-MIT).
+`Phantomlink` is dual-licensed under [Apache License, Version 2.0](https://github.com/robinohs/phantomlink/blob/main/LICENSE-APACHE) or [MIT License](https://github.com/robinohs/phantomlink/blob/main/LICENSE-MIT).
 
 ## 🙏 Acknowledgement
 
