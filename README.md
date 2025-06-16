@@ -10,6 +10,7 @@
     <a href="#contributors"><img alt="Contributors" src="https://img.shields.io/github/all-contributors/robinohs/phantomlink?color=ee8449&style=flat-square"></a>
     <a href="https://github.com/robinohs/phantomlink/actions/workflows/build.yml"><img alt="Build Status" src="https://github.com/robinohs/phantomlink/actions/workflows/build.yml/badge.svg"></a>
     <a href="https://rustup.rs"><img alt="MSRV" src="https://img.shields.io/badge/Rust-1.83.0%2B-orange.svg"></a>
+    <a href="https://api.reuse.software/info/github.com/robinohs/phantomlink"><img alt="MSRV" src="https://api.reuse.software/badge/github.com/robinohs/phantomlink"></a>
 </p>
 
 ```phantomlink``` is a tool for studying the impact of a dynamic network environment on the performance of internet protocols and applications. Written in safe Rust, the tool makes use of Linux network namespaces and virtual Ethernet devices to simulate a realistic end-to-end link. Using simple `.csv` scenario files, it is possible to define the time-evolving virtual link parameters, including delay, data rate over time, and route changes.
