@@ -8,5 +8,6 @@ pub(crate) fn run() -> eyre::Result<()> {
 
     namespace::clean().map_err(|e| eyre::eyre!("Failed to clean up network namespaces: {}", e))?;
     info!("Network environment has been successfully torn down.");
+    info!("This command does not reset modified kernel parameters. If the `start` command exits ungracefully, consult the generated temporary file to manually restore the parameters.");
     Ok(())
 }
