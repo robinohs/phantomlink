@@ -39,12 +39,14 @@ pub struct StartArgs {
     #[arg(help = "Path to the input file")]
     pub input: Utf8PathBuf,
     #[arg(
+        long = "buffer-size-multiplier",
         help = "Multiplier for the size of the bottleneck buffer with BDP as the base (1.0: size is equal to BDP)",
         default_value_t = 1.0,
         required = false
     )]
     pub bottleneck_buffer_multiplier: f64,
     #[arg(
+        long = "reconfiguration-delay",
         help = "Milliseconds it takes to reconfigure routes (the Pacer is paused during that time)",
         default_value_t = 0.0,
         required = false
@@ -52,6 +54,7 @@ pub struct StartArgs {
     pub reconfiguration_delay: f64,
     #[clap(
         value_enum,
+        long = "reconfiguration-mode",
         help = "Set reconfiguration mode",
         default_value_t = ReconfigurationMode::GSL,
         required = false
@@ -59,6 +62,7 @@ pub struct StartArgs {
     pub reconfiguration_mode: ReconfigurationMode,
     #[clap(
         value_enum,
+        long = "startup-mode",
         help = "Defines the constraint that is checked to determine the point in time after which the runtime synchronizes and starts to follow the input file",
         default_value_t = StartupMode::FirstPacket,
         required = false
