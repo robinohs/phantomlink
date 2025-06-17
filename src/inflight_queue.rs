@@ -1,4 +1,4 @@
-use log::{info, trace};
+use log::{debug, trace};
 
 use std::{
     cmp::Reverse,
@@ -27,7 +27,7 @@ pub enum ScheduleResult {
 impl InflightQueue {
     /// Creates a new InflightQueue instance with an empty priority queue for packets.
     pub fn new(link_id: usize, delay: Duration) -> InflightQueue {
-        info!("Link {}: init inflight_queue with delay={}ms", link_id, delay.as_millis());
+        debug!("Link {}: init inflight_queue with delay={}ms", link_id, delay.as_millis());
         InflightQueue {
             link_id,
             next_seq_id: 0,

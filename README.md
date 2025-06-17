@@ -5,10 +5,11 @@
 <p align="center"><code>phantomlink</code> looks like a multi-hop Internet path but emulates a virtual end-to-end link</p>
 
 <p align="center">
-    <a href="https://www.rustup.rs"><img alt="Minimum Stable Rust Version 1.7.4" src="https://img.shields.io/badge/Rust-1.74.1%2B-orange.svg"></a>
+    <a href="https://rustup.rs"><img alt="MSRV" src="https://img.shields.io/badge/Rust-1.83.0%2B-orange.svg"></a>
     <a href="https://depend.cs.uni-saarland.de/"><img alt="Dependable Systems and Software" src="https://img.shields.io/badge/Dependable%20Systems%20and%20Software-8A2BE2"></a>
     <a href="#contributors"><img alt="Contributors" src="https://img.shields.io/github/all-contributors/robinohs/phantomlink?color=ee8449&style=flat-square"></a>
     <a href="https://github.com/robinohs/phantomlink/actions/workflows/build.yml"><img alt="Build Status" src="https://github.com/robinohs/phantomlink/actions/workflows/build.yml/badge.svg"></a>
+    <a href="https://api.reuse.software/info/github.com/robinohs/phantomlink"><img alt="MSRV" src="https://api.reuse.software/badge/github.com/robinohs/phantomlink"></a>
 </p>
 
 ```phantomlink``` is a tool for studying the impact of a dynamic network environment on the performance of internet protocols and applications. Written in safe Rust, the tool makes use of Linux network namespaces and virtual Ethernet devices to simulate a realistic end-to-end link. Using simple `.csv` scenario files, it is possible to define the time-evolving virtual link parameters, including delay, data rate over time, and route changes.
@@ -27,30 +28,102 @@ With the ability to reorder, delay, pace, and drop packets, ```phantomlink``` ca
 > [!WARNING]
 > Phantomlink currently only runs on Linux or the Windows Subsystem for Linux (WSL)
 
-Phantomlink is available for download as a binary here on GitHub.
-At the moment it is still required to setup the namespace environment manually (script).
-We provide a bunch of scripts, which handle the most common operations.
-
 ### Installation
+
+#### Debian/Ubuntu
+
+  1. Download the ```phantomlink``` debian package.
+  2. Install the package using (replace [version] with the downloaded version):
+  ```sh
+  sudo apt install ~/downloads/phantomlink_[version].deb 
+  ```
+
+#### Other Distros
 
 To get started you have to do the following:
 
-  1.  Download the ```phantomlink``` binary, make it executable and move it to `/bin` or `/usr/bin`.
-  2.  Create a new folder and download the scripts folder.
-  3.  Create an `.csv` input file using the table format from above.
-  4.  Double check and execute the `setup.sh` script to create the namespaces, the virtual eth devices and configure them.
-  5.  Double check and run the `run.sh` script to execute an instance of iperf in client mode in the client namespace and an instance of iperf in server mode in the server namespace.
+  1. Download the ```phantomlink``` binary.
+  2. Make the binary executable using:
+  ```bash
+  chmod +x phantomlink_[version]
+  ```
+  3. Move the binary to `/bin`.
+
+#### Build from source
+
+It is also possible to build the `phantomlink` binary from source.
+
+##### Prerequisites
+- Git installed on your system.
+- Rust and Cargo installed (for building the binary).
+
+##### Option 1: Manual Build
+1. Clone the `phantomlink` repository from GitHub:
+```bash
+git clone https://github.com/robinohs/phantomlink
+```
+2. Navigate to the cloned repository and build the binary using Cargo:
+```bash
+cargo build --release
+```
+3. Move the binary to a directory that is in your system's PATH:
+```bash
+sudo mv target/release/phantomlink /bin/
+```
+
+##### Option 2: Use the Install Script
+1. Clone the ```phantomlink``` repository from GitHub:
+```bash
+git clone https://github.com/robinohs/phantomlink
+```
+2. Navigate to the repository and execute the provided `install.sh` script:
+```bash
+cd phantomlink
+./install.sh
+```
+
+### Notes
+Verify ```phantomlink``` is correctly installed by running:
+```bash
+phantomlink --version
+```
 
 ### Shell completions
 
 ```phantomlink``` provides shell completion support for multiple shells, including **bash**, **elvish**, **fish**, **PowerShell**, **zsh**, and **nushell**. It automatically detects your default shell from the environment, so you don’t need to specify it unless you want to.
-To generate completions for a specific shell, use the command below. phantomlink will output the auto-completion code to stdout, allowing you to pipe it into the auto-completion file appropriate for your shell.
+To generate completions for a specific shell, use the command below. ```phantomlink``` will output the auto-completion code to stdout, allowing you to pipe it into the auto-completion file appropriate for your shell.
 
 ```bash
 phantomlink generate <shell>
 ```
 
+### Quick-start
 
+  1. Download the [input.csv](examples/input.csv) file from examples.
+  2. Setup the network environment:
+  ```bash
+  phantomlink setup
+  ```
+  3. Start the main virtual link (assuming the input file is in ~/Downloads):
+  ```bash
+  phantomlink start ~/Downloads/input.csv
+  ```
+  4. Start an application in the server network namespace:
+  ```bash
+  phantomlink exec server iperf3 -s --port 5000
+  ```
+  5. Start an application in the client network namespace:
+  ```bash
+  phantomlink exec client iperf3 -c 192.168.66.2 --port 5000
+  ```
+  6. To get informations about the client or server network namespace you can use:
+  ```bash
+  phantomlink exec <client/server> ifconfig
+  ```
+  7. After the experiment has finished, you can teardown the network environment:
+  ```bash
+  phantomlink teardown
+  ```
 
 ## 🔍 Structure of ```phantomlink```
 
@@ -77,7 +150,7 @@ Parameters are updated at specified times, creating a step function of changes. 
 ### Architecture
 
 <p align="center">
-  <img src="./docs/images/overview.png" alt="Tool overview" width="750px">
+  <img src="./docs/images/overview.png" alt="Tool overview" width="1000px">
 </p>
 
 At its core, the ```phantomlink``` toolchain has a binary that operates in conjunction with Linux network namespaces and virtual Ethernet devices.
@@ -99,7 +172,7 @@ To allow traffic to flow from the client to the server namespace and vice-versa,
 ### Core Binary
 
 <p align="center">
-  <img src="./docs/images/binary.png" alt="Binary structure" width="750px">
+  <img src="./docs/images/binary.png" alt="Binary structure" width="1000px">
 </p>
 
 The ```phantomlink``` binary is implemented in safe Rust to benefit from Rust’s performance and memory safety. The internal binary structure is depicted in the picture above.
@@ -132,7 +205,7 @@ Any contributions are very welcome!
 
 ## 🏛 License
 
-`Phantomlink` is dual-licensed under [Apache License, Version 2.0](https://github.com/robinohs/phantomlink/blob/main/LICENSE-APACHE) and [MIT License](https://github.com/robinohs/phantomlink/blob/main/LICENSE-MIT).
+`Phantomlink` is dual-licensed under [Apache License, Version 2.0](https://github.com/robinohs/phantomlink/blob/main/LICENSE-APACHE) or [MIT License](https://github.com/robinohs/phantomlink/blob/main/LICENSE-MIT).
 
 ## 🙏 Acknowledgement
 

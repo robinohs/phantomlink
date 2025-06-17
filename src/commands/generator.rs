@@ -1,20 +1,27 @@
 use std::{io, path::Path};
 
-use clap::{builder::PossibleValue, Command, ValueEnum};
+use clap::{builder::PossibleValue, Command, CommandFactory, ValueEnum};
 use clap_complete::{generate, Generator, Shell};
 use clap_complete_nushell::Nushell;
 use eyre::{bail, eyre};
 
-use crate::cli::create_cli;
+use crate::cli::opt::{GenerateArgs, Opt};
 
-pub(crate) fn print_completions(shell: Shells) -> eyre::Result<()> {
-    let cmd = &mut create_cli();
+pub(crate) fn run(generate_args: GenerateArgs) -> eyre::Result<()> {
+    match generate_args.shell {
+        Some(shell) => print_completions(shell),
+        None => print_completions_env(),
+    }
+}
+
+fn print_completions(shell: Shells) -> eyre::Result<()> {
+    let cmd = &mut Opt::command();
     generate(shell, cmd, cmd.get_name().to_string(), &mut io::stdout());
     Ok(())
 }
 
-pub(crate) fn print_completions_env() -> eyre::Result<()> {
-    let cmd = &mut create_cli();
+fn print_completions_env() -> eyre::Result<()> {
+    let cmd = &mut Opt::command();
     let generator = extract_generator()?;
     generate(generator, cmd, cmd.get_name().to_string(), &mut io::stdout());
     Ok(())

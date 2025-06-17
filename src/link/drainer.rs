@@ -1,6 +1,6 @@
 use core_affinity::{set_for_current, CoreId};
 use crossbeam::atomic::AtomicCell;
-use log::{debug, info};
+use log::debug;
 use pnet::datalink::DataLinkReceiver;
 use std::sync::atomic::{AtomicBool, Ordering};
 use thread_priority::{set_current_thread_priority, ThreadPriority};
@@ -32,10 +32,10 @@ impl Drainer {
 
     pub fn run(&self, mut socket_input: Box<dyn DataLinkReceiver>, core_id: Option<CoreId>) {
         if let Some(core_id) = core_id {
-            info!("Link {}: start drainer (Core: {}).", self.link_id, core_id.id);
+            debug!("Link {}: start drainer (Core: {}).", self.link_id, core_id.id);
             set_for_current(core_id);
         } else {
-            info!("Link {}: start drainer.", self.link_id);
+            debug!("Link {}: start drainer.", self.link_id);
         }
         set_current_thread_priority(ThreadPriority::Max).expect("Could not set thread priority to MAX.");
 

@@ -2,7 +2,7 @@ use std::sync::{Arc, Condvar, Mutex};
 
 use core_affinity::{set_for_current, CoreId};
 use crossbeam::atomic::AtomicCell;
-use log::info;
+use log::debug;
 use pnet::datalink::DataLinkSender;
 use spin_sleep::SpinSleeper;
 use std::time::Instant;
@@ -33,10 +33,10 @@ impl Deliverer {
     /// Starts the loop to check the two ```PacketStack``` and send those ```Packet``` with fulfilled send condition.
     pub fn run(&mut self, mut socket_output: Box<dyn DataLinkSender>, core_id: Option<CoreId>) {
         if let Some(core_id) = core_id {
-            info!("Link {}: start sending on socket (Core: {}).", self.id, core_id.id);
+            debug!("Link {}: start sending on socket (Core: {}).", self.id, core_id.id);
             set_for_current(core_id);
         } else {
-            info!("Link {}: start sending on socket.", self.id);
+            debug!("Link {}: start sending on socket.", self.id);
         }
         set_current_thread_priority(ThreadPriority::Max).expect("Could not set thread priority to MAX.");
         let spin_sleep = SpinSleeper::default();

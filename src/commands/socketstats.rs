@@ -1,5 +1,4 @@
 use std::{
-    path::Path,
     thread::sleep,
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
@@ -18,7 +17,56 @@ use netlink_packet_sock_diag::{
 };
 use netlink_sys::{protocols::NETLINK_SOCK_DIAG, Socket, SocketAddr};
 
+use crate::{cli::opt::SocketstatsArgs, commands::utils, phork::namespace::NS_NAME_LINK};
+
 const SLEEP_DUR: Duration = Duration::from_millis(250);
+
+/// Runs the socket stats collector and exports the received statistics to a .csv file.
+pub fn run(socketstats_args: SocketstatsArgs) -> Result<()> {
+    // check if the user is root
+    utils::ensure_user_is_root()?;
+    // check if network environment is set up
+    utils::require_network_environment()?;
+    // switch to the desired namespace
+    utils::switch_network_environment(NS_NAME_LINK)?;
+
+    let socket = connect_socket().unwrap();
+    info!("Running socketstats until receiving Ctrl-C...");
+
+    let inet_response = wait_until_socket_exists(&socket)?;
+    let client_socket_id = inet_response.header.socket_id.clone();
+    info!(
+        "Found iperf client socket running {}: {client_socket_id:?}",
+        extract_cong_alg(&inet_response)?
+    );
+
+    let mut wtr = csv::Writer::from_path(socketstats_args.output_file)?;
+    wtr.write_record(FORMAT_TCP_INFO_HEADER)?;
+
+    let tcp_info = extract_tcp_info(inet_response)?;
+    wtr.write_record(format_tcp_info_record(&tcp_info)?)?;
+
+    loop {
+        let mut received_msgs = fetch_socket_stats(&socket, generate_sock_diag_msg(Some(&client_socket_id)))?;
+
+        match received_msgs.len() {
+            0 => {
+                info!("Received empty response (socket closed). Terminating.");
+                break;
+            }
+            1 => {
+                let inet_response = received_msgs.pop().ok_or_eyre("received_msgs is empty")?;
+                let tcp_info = extract_tcp_info(inet_response)?;
+                wtr.write_record(format_tcp_info_record(&tcp_info)?)?;
+            }
+            _ => unreachable!("there should be only one message per socket id"),
+        }
+
+        sleep(SLEEP_DUR);
+    }
+    wtr.flush()?;
+    Ok(())
+}
 
 /// Creates a new socket and connects to the kernel using the sock_diag netlink subsystem.
 fn connect_socket() -> Result<Socket> {
@@ -198,44 +246,4 @@ fn format_tcp_info_record(tcp_info: &TcpInfo) -> Result<[String; 8]> {
         (tcp_info.snd_cwnd * tcp_info.snd_mss).to_string(),     // snd_cwnd is given in number of segments
         (tcp_info.min_rtt / 1000).to_string(),                  // [µs] -> [ms]
     ])
-}
-
-/// Runs the socket stats collector and exports the received statistics to a .csv file.
-pub fn socketstats(output_path: &Path) -> Result<()> {
-    let socket = connect_socket().unwrap();
-    info!("Running socketstats until receiving Ctrl-C...");
-
-    let inet_response = wait_until_socket_exists(&socket)?;
-    let client_socket_id = inet_response.header.socket_id.clone();
-    info!(
-        "Found iperf client socket running {}: {client_socket_id:?}",
-        extract_cong_alg(&inet_response)?
-    );
-
-    let mut wtr = csv::Writer::from_path(output_path)?;
-    wtr.write_record(FORMAT_TCP_INFO_HEADER)?;
-
-    let tcp_info = extract_tcp_info(inet_response)?;
-    wtr.write_record(format_tcp_info_record(&tcp_info)?)?;
-
-    loop {
-        let mut received_msgs = fetch_socket_stats(&socket, generate_sock_diag_msg(Some(&client_socket_id)))?;
-
-        match received_msgs.len() {
-            0 => {
-                info!("Received empty response (socket closed). Terminating.");
-                break;
-            }
-            1 => {
-                let inet_response = received_msgs.pop().ok_or_eyre("received_msgs is empty")?;
-                let tcp_info = extract_tcp_info(inet_response)?;
-                wtr.write_record(format_tcp_info_record(&tcp_info)?)?;
-            }
-            _ => unreachable!("there should be only one message per socket id"),
-        }
-
-        sleep(SLEEP_DUR);
-    }
-    wtr.flush()?;
-    Ok(())
 }
