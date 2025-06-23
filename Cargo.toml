@@ -11,10 +11,8 @@ authors = [
 ]
 keywords = [
     "linux",
-    "network-emulator",
     "network-emulation",
     "virtual-link",
-    "constellations",
     "aerospace",
     "command-line",
 ]
