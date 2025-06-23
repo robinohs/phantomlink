@@ -38,6 +38,15 @@ With the ability to reorder, delay, pace, and drop packets, ```phantomlink``` ca
   sudo apt install ~/downloads/phantomlink_[version].deb 
   ```
 
+#### Cargo
+
+To get started you have to do the following:
+
+  1. Install ```phantomlink``` from crates.io:
+```bash
+cargo install phantomlink
+```
+
 #### Other Distros
 
 To get started you have to do the following:
