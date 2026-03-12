@@ -6,7 +6,7 @@ use crate::{
     phork::namespace::{NS_NAME_CLIENT, NS_NAME_SERVER},
     Shells,
 };
-use clap::{arg, command, Args, Parser, Subcommand, ValueEnum};
+use clap::{Args, Parser, Subcommand, ValueEnum};
 
 #[derive(Debug, Parser)]
 #[command(name = "phantomlink")]
