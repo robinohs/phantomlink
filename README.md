@@ -5,7 +5,7 @@
 <p align="center"><code>phantomlink</code> looks like a multi-hop Internet path but emulates a virtual end-to-end link</p>
 
 <p align="center">
-    <a href="https://rustup.rs"><img alt="MSRV" src="https://img.shields.io/badge/Rust-1.83.0%2B-orange.svg"></a>
+    <a href="https://rustup.rs"><img alt="MSRV" src="https://img.shields.io/badge/Rust-1.88.0%2B-orange.svg"></a>
     <a href="https://depend.cs.uni-saarland.de/"><img alt="Dependable Systems and Software" src="https://img.shields.io/badge/Dependable%20Systems%20and%20Software-8A2BE2"></a>
     <a href="#contributors"><img alt="Contributors" src="https://img.shields.io/github/all-contributors/robinohs/phantomlink?color=ee8449&style=flat-square"></a>
     <a href="https://github.com/robinohs/phantomlink/actions/workflows/build.yml"><img alt="Build Status" src="https://github.com/robinohs/phantomlink/actions/workflows/build.yml/badge.svg"></a>
