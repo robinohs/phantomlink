@@ -2,6 +2,7 @@ set -euo pipefail
 version=$(grep version Cargo.toml | head -1 | awk '{print $3}' | tr -d '"')
 # create debian dir
 mkdir -p debian/usr/bin debian/DEBIAN
+chmod +x target/release/phantomlink
 cp target/release/phantomlink debian/usr/bin/
 cat > debian/DEBIAN/control <<- EOF
 Package: phantomlink

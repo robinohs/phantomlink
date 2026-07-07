@@ -1,12 +1,11 @@
-use crate::phork::namespace::{self, Namespace};
-use log::{debug, info};
+use crate::{build, phork::namespace::Namespace};
+use log::debug;
 use nix::unistd::Uid;
 
 /// Ensures that the network environment is set up.
 pub(crate) fn require_network_environment() -> eyre::Result<()> {
     if !crate::phork::namespace::is_setup()? {
-        info!("Network environment is not set up. Setting up...");
-        namespace::setup().map_err(|e| eyre::eyre!("Failed to set up network environment: {}", e))?;
+        eyre::bail!("Network environment is not set up. Please run '{} setup' to create the necessary network namespaces and virtual ethernet links.", build::PROJECT_NAME);
     }
     Ok(())
 }

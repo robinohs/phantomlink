@@ -28,9 +28,9 @@ jobs:
           name: phantomlink
           path: target/release/phantomlink
 
-  package:
+  package-deb:
     runs-on: ubuntu-latest
-    name: 🐧 Package
+    name: 🐧 Package debian
     needs: [build]
     steps:
       - uses: actions/checkout@v4
@@ -48,3 +48,20 @@ jobs:
         with:
           name: phantomlink_deb
           path: "*.deb"
+
+  package-rpm:
+    runs-on: ubuntu-latest
+    name: 🐧 Package rpm
+    needs: [build]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: phantomlink
+      - name: Create rpm package
+        run: bash ./.github/scripts/create_rpm.sh
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: phantomlink_rpm
+          path: "*.rpm"
