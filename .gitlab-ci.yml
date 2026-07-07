@@ -5,7 +5,7 @@ stages:
   - 📦 Package
 
 default:
-  image: rust:1.87
+  image: rust:1.88
 
 🎨 cargo-fmt:
   stage: 🔬 Static Analysis
