@@ -60,6 +60,24 @@ pub struct StartArgs {
         required = false
     )]
     pub reconfiguration_mode: ReconfigurationMode,
+    #[arg(
+        long = "no-max-thread-priority",
+        help = "Keep the link threads at their default priority instead of raising them to the maximum",
+        required = false
+    )]
+    pub no_max_thread_priority: bool,
+    #[arg(
+        long = "no-network-namespace",
+        help = "Stay in the current network namespace instead of switching into the phantomlink one",
+        required = false
+    )]
+    pub no_network_namespace: bool,
+    #[arg(
+        long = "no-kernel-params",
+        help = "Keep the socket buffer kernel parameters instead of tuning them to the maximum BDP",
+        required = false
+    )]
+    pub no_kernel_params: bool,
     #[clap(
         value_enum,
         long = "startup-mode",

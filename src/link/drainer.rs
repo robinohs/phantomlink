@@ -16,10 +16,11 @@ pub struct Drainer {
     startup_logic: StartupMode,
     next_sender: AtomicCell<Option<ByteSender>>,
     next_ready: AtomicBool,
+    max_thread_priority: bool,
 }
 
 impl Drainer {
-    pub fn new(link_id: usize, startup_logic: StartupMode, initial_sender: ByteSender) -> Self {
+    pub fn new(link_id: usize, startup_logic: StartupMode, initial_sender: ByteSender, max_thread_priority: bool) -> Self {
         let next_sender = AtomicCell::new(Some(initial_sender));
         let next_ready = AtomicBool::new(false);
         Drainer {
@@ -27,6 +28,7 @@ impl Drainer {
             startup_logic,
             next_sender,
             next_ready,
+            max_thread_priority,
         }
     }
 
@@ -37,7 +39,9 @@ impl Drainer {
         } else {
             debug!("Link {}: start drainer.", self.link_id);
         }
-        set_current_thread_priority(ThreadPriority::Max).expect("Could not set thread priority to MAX.");
+        if self.max_thread_priority {
+            set_current_thread_priority(ThreadPriority::Max).expect("Could not set thread priority to MAX.");
+        }
 
         let mut tx = self.next_sender.take().expect("Initially, there is a sender.");
 

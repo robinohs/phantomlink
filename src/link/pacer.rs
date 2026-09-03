@@ -49,6 +49,7 @@ pub struct Pacer {
     btldr: DataRateCell,
     delay: AtomicU64,
     reconfigure_until: AtomicCell<Option<Instant>>,
+    max_thread_priority: bool,
 }
 
 impl Pacer {
@@ -58,6 +59,7 @@ impl Pacer {
         link: Arc<(Mutex<InflightQueue>, Condvar)>,
         initial_btldr: InformationRate,
         initial_delay: Duration,
+        max_thread_priority: bool,
     ) -> Self {
         Self {
             route_id: AtomicU64::new(route_id),
@@ -66,6 +68,7 @@ impl Pacer {
             btldr: DataRateCell::new(initial_btldr),
             delay: AtomicU64::new(initial_delay.as_millis().try_into().unwrap()),
             reconfigure_until: AtomicCell::new(None),
+            max_thread_priority,
         }
     }
 
@@ -73,7 +76,9 @@ impl Pacer {
         if let Some(core_id) = core_id {
             set_for_current(core_id);
         }
-        set_current_thread_priority(ThreadPriority::Max).expect("Could not set thread priority to MAX.");
+        if self.max_thread_priority {
+            set_current_thread_priority(ThreadPriority::Max).expect("Could not set thread priority to MAX.");
+        }
         let spin_sleep = SpinSleeper::default();
 
         let mut last_packet = Instant::now(); // stores time when last packet was sent
