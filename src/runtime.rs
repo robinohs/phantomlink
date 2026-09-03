@@ -28,6 +28,8 @@ pub struct Runtime {
     buffer_size_multiplier: f64,
     reconfiguration_delay: Duration,
     reconfiguration_mode: ReconfigurationMode,
+    max_thread_priority: bool,
+    set_kernel_params: bool,
     default_kernel_params: HashMap<String, Vec<String>>,
 }
 
@@ -55,6 +57,8 @@ impl Runtime {
         buffer_size_multiplier: f64,
         reconfiguration_delay: Duration,
         reconfiguration_mode: ReconfigurationMode,
+        max_thread_priority: bool,
+        set_kernel_params: bool,
     ) -> Result<Runtime> {
         info!("Creating new phantomlink instance, reading input from {:?}.", input_file_path);
 
@@ -64,6 +68,8 @@ impl Runtime {
             buffer_size_multiplier,
             reconfiguration_delay,
             reconfiguration_mode,
+            max_thread_priority,
+            set_kernel_params,
             default_kernel_params: HashMap::new(),
         };
         Ok(rt)
@@ -73,7 +79,9 @@ impl Runtime {
     pub fn run(&mut self, stop_rx: Receiver<()>) -> Result<()> {
         debug!("Starting runtime.");
 
-        self.set_socket_parameters()?;
+        if self.set_kernel_params {
+            self.set_socket_parameters()?;
+        }
 
         let client_interf_name = "sim-veth1";
         let server_interf_name = "sim-veth2";
@@ -133,8 +141,8 @@ impl Runtime {
             (Some(cores_1), Some(cores_2))
         };
 
-        let mut ovl1 = OnewayVirtualLink::new(0, self.startup_mode, self.buffer_size_multiplier, cores_1);
-        let mut ovl2 = OnewayVirtualLink::new(1, self.startup_mode, self.buffer_size_multiplier, cores_2);
+        let mut ovl1 = OnewayVirtualLink::new(0, self.startup_mode, self.buffer_size_multiplier, cores_1, self.max_thread_priority);
+        let mut ovl2 = OnewayVirtualLink::new(1, self.startup_mode, self.buffer_size_multiplier, cores_2, self.max_thread_priority);
         let rmq1 = self.route_metric_queue.clone();
         let rmq2 = self.route_metric_queue.clone();
         let rec_delay = self.reconfiguration_delay;
@@ -160,8 +168,10 @@ impl Runtime {
         .unwrap();
 
         // Restore kernel parameters
-        self.restore_kernel_params()?;
-        debug!("Kernel parameters restored.");
+        if self.set_kernel_params {
+            self.restore_kernel_params()?;
+            debug!("Kernel parameters restored.");
+        }
 
         info!("Exit...");
         Ok(())
