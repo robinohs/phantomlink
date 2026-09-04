@@ -49,6 +49,7 @@ pub struct OnewayVirtualLink {
     startup_mode: StartupMode,
     buffer_size_multiplier: f64,
     core_config: Option<OVLCoreConfig>,
+    max_thread_priority: bool,
 }
 
 impl OnewayVirtualLink {
@@ -57,12 +58,14 @@ impl OnewayVirtualLink {
         startup_mode: StartupMode,
         buffer_size_multiplier: f64,
         core_config: Option<OVLCoreConfig>,
+        max_thread_priority: bool,
     ) -> OnewayVirtualLink {
         OnewayVirtualLink {
             link_id,
             startup_mode,
             buffer_size_multiplier,
             core_config,
+            max_thread_priority,
         }
     }
 
@@ -81,7 +84,9 @@ impl OnewayVirtualLink {
         } else {
             debug!("Link {}: start one-way virtual link.", self.link_id);
         }
-        set_current_thread_priority(ThreadPriority::Max).expect("Could not set thread priority to MAX.");
+        if self.max_thread_priority {
+            set_current_thread_priority(ThreadPriority::Max).expect("Could not set thread priority to MAX.");
+        }
 
         // create packet stacks for this link
         let spin_sleep = SpinSleeper::default();
@@ -96,7 +101,7 @@ impl OnewayVirtualLink {
         let (sender, receiver, channel_handle) = byte_bounded_channel(Information::new::<bit>(channel_size.get::<bit>()));
 
         // create & start drainer
-        let drainer = Arc::new(Drainer::new(self.link_id, self.startup_mode, sender));
+        let drainer = Arc::new(Drainer::new(self.link_id, self.startup_mode, sender, self.max_thread_priority));
         let drainer_clone = drainer.clone();
         let core_id_drainer = self.core_config.as_ref().map(|cfg| cfg.core_id_drainer);
         let thread_drainer = thread::spawn(move || {
@@ -104,7 +109,14 @@ impl OnewayVirtualLink {
         });
 
         // create & start pacer
-        let pacer = Arc::new(Pacer::create(route_id, receiver, inflight_queue.clone(), btldr, delay));
+        let pacer = Arc::new(Pacer::create(
+            route_id,
+            receiver,
+            inflight_queue.clone(),
+            btldr,
+            delay,
+            self.max_thread_priority,
+        ));
         let pacer_clone: Arc<Pacer> = pacer.clone();
         let core_id_pacer = self.core_config.as_ref().map(|cfg| cfg.core_id_pacer);
         let thread_pacer = thread::spawn(move || {
@@ -114,7 +126,12 @@ impl OnewayVirtualLink {
         // create & start sender
         let inflight_queue_sender = inflight_queue.clone();
         let deliverer_reconfig_until = Arc::new(AtomicCell::new(None));
-        let mut deliverer = Deliverer::new(self.link_id, inflight_queue_sender, deliverer_reconfig_until.clone());
+        let mut deliverer = Deliverer::new(
+            self.link_id,
+            inflight_queue_sender,
+            deliverer_reconfig_until.clone(),
+            self.max_thread_priority,
+        );
         let core_id_deliverer = self.core_config.as_ref().map(|cfg| cfg.core_id_deliverer);
         let thread_sender = thread::spawn(move || {
             deliverer.run(output, core_id_deliverer);

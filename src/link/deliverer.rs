@@ -14,6 +14,7 @@ pub struct Deliverer {
     id: usize,
     inflight_queue: Arc<(Mutex<InflightQueue>, Condvar)>,
     reconfigure_until: Arc<AtomicCell<Option<Instant>>>,
+    max_thread_priority: bool,
 }
 
 impl Deliverer {
@@ -22,11 +23,13 @@ impl Deliverer {
         id: usize,
         inflight_queue: Arc<(Mutex<InflightQueue>, Condvar)>,
         reconfigure_until: Arc<AtomicCell<Option<Instant>>>,
+        max_thread_priority: bool,
     ) -> Deliverer {
         Deliverer {
             id,
             inflight_queue,
             reconfigure_until,
+            max_thread_priority,
         }
     }
 
@@ -38,7 +41,9 @@ impl Deliverer {
         } else {
             debug!("Link {}: start sending on socket.", self.id);
         }
-        set_current_thread_priority(ThreadPriority::Max).expect("Could not set thread priority to MAX.");
+        if self.max_thread_priority {
+            set_current_thread_priority(ThreadPriority::Max).expect("Could not set thread priority to MAX.");
+        }
         let spin_sleep = SpinSleeper::default();
 
         let (lock, cvar) = &*self.inflight_queue;
