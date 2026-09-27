@@ -13,7 +13,7 @@ use crate::{cli::opt::StartArgs, commands::utils, phork::namespace::NS_NAME_LINK
 
 pub(crate) fn run(start_args: StartArgs) -> eyre::Result<()> {
     // check if the user is root, but only for the features that need it
-    if !start_args.no_network_namespace || !start_args.no_kernel_params {
+    if !start_args.no_network_namespace || !start_args.no_kernel_params || !start_args.no_max_thread_priority {
         utils::ensure_user_is_root()?;
     }
 
