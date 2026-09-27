@@ -13,11 +13,11 @@ use crate::{cli::opt::StartArgs, commands::utils, phork::namespace::NS_NAME_LINK
 
 pub(crate) fn run(start_args: StartArgs) -> eyre::Result<()> {
     // check if the user is root, but only for the features that need it
-    if !start_args.no_network_namespace || !start_args.no_kernel_params || !start_args.no_max_thread_priority {
+    if start_args.network_namespace || start_args.kernel_params || start_args.max_thread_priority {
         utils::ensure_user_is_root()?;
     }
 
-    if !start_args.no_network_namespace {
+    if start_args.network_namespace {
         // check if network environment is set up
         utils::require_network_environment()?;
         // switch to the desired namespace
@@ -50,8 +50,8 @@ pub(crate) fn run(start_args: StartArgs) -> eyre::Result<()> {
         start_args.bottleneck_buffer_multiplier,
         reconfiguration_delay,
         start_args.reconfiguration_mode,
-        !start_args.no_max_thread_priority,
-        !start_args.no_kernel_params,
+        start_args.max_thread_priority,
+        start_args.kernel_params,
     )?;
 
     rt.run(rx).unwrap();
