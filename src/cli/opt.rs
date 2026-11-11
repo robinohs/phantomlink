@@ -6,7 +6,7 @@ use crate::{
     phork::namespace::{NS_NAME_CLIENT, NS_NAME_SERVER},
     Shells,
 };
-use clap::{Args, Parser, Subcommand, ValueEnum};
+use clap::{ArgAction, Args, Parser, Subcommand, ValueEnum};
 
 #[derive(Debug, Parser)]
 #[command(name = "phantomlink")]
@@ -60,6 +60,27 @@ pub struct StartArgs {
         required = false
     )]
     pub reconfiguration_mode: ReconfigurationMode,
+    #[arg(
+        long = "no-max-thread-priority",
+        action = ArgAction::SetFalse,
+        help = "Keep the link threads at their default priority instead of raising them to the maximum",
+        required = false
+    )]
+    pub max_thread_priority: bool,
+    #[arg(
+        long = "no-network-namespace",
+        action = ArgAction::SetFalse,
+        help = "Stay in the current network namespace instead of switching into the phantomlink one",
+        required = false
+    )]
+    pub network_namespace: bool,
+    #[arg(
+        long = "no-kernel-params",
+        action = ArgAction::SetFalse,
+        help = "Keep the socket buffer kernel parameters instead of tuning them to the maximum BDP",
+        required = false
+    )]
+    pub kernel_params: bool,
     #[clap(
         value_enum,
         long = "startup-mode",
